@@ -4,9 +4,8 @@ param(
     [ValidateSet('codex', 'claude-code', 'github-copilot-cli')]
     [string]$Client,
 
+    [ValidateSet('all', 'canvas-apps', 'power-automate-flowagent', 'dataverse', 'copilot-studio', 'power-cat')]
     [string]$Capability = 'all',
-
-    [switch]$SkipMcpConfigCheck,
 
     [string]$CataloguePath = (Join-Path $PSScriptRoot '..\profiles\capabilities.json')
 )
@@ -54,11 +53,29 @@ if ($selectedCapabilities.Count -eq 0) {
     throw "Capability '$Capability' is not in the capability catalogue."
 }
 
+$clientCommands = @{
+    'codex' = 'codex'
+    'claude-code' = 'claude'
+    'github-copilot-cli' = 'copilot'
+}
+
 $hasMissingPrerequisite = $false
-Write-Output "client: $Client"
+Write-Output '開発環境の前提確認'
+Write-Output "クライアント: $Client"
+
+$clientCommand = $clientCommands[$Client]
+$clientStatus = Test-PPDevCommand -Name $clientCommand
+if ($clientStatus.Present) {
+    Write-Output "client command '$clientCommand': present ($($clientStatus.VersionStatus))"
+}
+else {
+    Write-Output "client command '$clientCommand': missing"
+    $hasMissingPrerequisite = $true
+}
+
 foreach ($selectedCapability in $selectedCapabilities) {
     $clientSupport = @($selectedCapability.clientSupport | Where-Object { $_.clientId -eq $Client })[0]
-    Write-Output "capability: $($selectedCapability.id) ($($clientSupport.status))"
+    Write-Output "機能: $($selectedCapability.name) [$($clientSupport.status)]"
     foreach ($prerequisite in @($selectedCapability.prerequisiteCommands | Select-Object -Unique)) {
         $status = Test-PPDevCommand -Name $prerequisite
         if ($status.Present) {
@@ -70,12 +87,7 @@ foreach ($selectedCapability in $selectedCapabilities) {
         }
     }
 
-    if ($SkipMcpConfigCheck) {
-        Write-Output 'MCP readiness: skipped'
-    }
-    else {
-        Write-Output 'MCP readiness: manual-verification-required'
-    }
+    Write-Output '手動確認: 公式プラグインの導入と MCP 接続を開発環境で確認してください。'
 }
 
 if ($hasMissingPrerequisite) {
