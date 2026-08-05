@@ -122,3 +122,37 @@ try {
 finally {
     Remove-Item -LiteralPath $temporaryCataloguePath -Force -ErrorAction SilentlyContinue
 }
+
+$canaryPath = Join-Path $repositoryRoot 'scripts\canary.ps1'
+if (-not (Test-Path -LiteralPath $canaryPath)) {
+    throw 'Expected scripts/canary.ps1 to exist.'
+}
+
+$agentOverlayPath = Join-Path $repositoryRoot 'templates\AGENTS.power-platform.md'
+if (-not (Test-Path -LiteralPath $agentOverlayPath)) {
+    throw 'Expected templates/AGENTS.power-platform.md to exist.'
+}
+
+$canary = Get-Content -LiteralPath $canaryPath -Raw
+if ($canary -match 'Connect-|az login|Invoke-WebRequest|Invoke-RestMethod|npm install|plugin install|git push|git fetch|\$env:') {
+    throw 'canary must remain local and read-only.'
+}
+
+$pwshExecutable = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
+$canaryOutput = @(& $pwshExecutable -NoProfile -File $canaryPath 2>&1 | ForEach-Object { $_.ToString() })
+if ($LASTEXITCODE -ne 0) {
+    throw 'canary must succeed for the repository catalogue.'
+}
+
+foreach ($capabilityId in $requiredCapabilities) {
+    if (($canaryOutput -join "`n") -notmatch [regex]::Escape($capabilityId)) {
+        throw "canary must report capability '$capabilityId'."
+    }
+}
+
+$agentOverlay = Get-Content -LiteralPath $agentOverlayPath -Raw
+foreach ($requiredRule in @('探索・試作', '採用・運用', 'existing managed assets', 'stopped state', 'explicit approval')) {
+    if ($agentOverlay -notmatch [regex]::Escape($requiredRule)) {
+        throw "AGENTS overlay must include '$requiredRule'."
+    }
+}
