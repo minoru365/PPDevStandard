@@ -62,13 +62,45 @@ function Get-PPDevCatalogue {
         throw 'Agent 365 must remain experimental and disabled by default.'
     }
 
+    foreach ($client in $clients) {
+        $clientPrerequisites = @($client.prerequisiteCommands)
+        if (@($clientPrerequisites.name | Select-Object -Unique).Count -ne $clientPrerequisites.Count) {
+            throw "Client '$($client.id)' prerequisite command names must be unique."
+        }
+
+        foreach ($prerequisite in $clientPrerequisites) {
+            if ([string]::IsNullOrWhiteSpace($prerequisite.name)) {
+                throw "Client '$($client.id)' prerequisites must declare a command name."
+            }
+
+            if ($null -ne $prerequisite.minimumMajor -and ($prerequisite.minimumMajor -isnot [long] -or $prerequisite.minimumMajor -lt 1)) {
+                throw "Client '$($client.id)' prerequisite '$($prerequisite.name)' must declare a positive integer minimumMajor."
+            }
+        }
+    }
+
     foreach ($capability in $capabilities) {
         if ([string]::IsNullOrWhiteSpace($capability.source.url) -or $capability.source.url -notmatch '^https://') {
             throw "Capability '$($capability.id)' must declare an HTTPS source URL."
         }
 
-        if (@($capability.prerequisiteCommands).Count -eq 0) {
+        $capabilityPrerequisites = @($capability.prerequisiteCommands)
+        if ($capabilityPrerequisites.Count -eq 0) {
             throw "Capability '$($capability.id)' must declare at least one local prerequisite command."
+        }
+
+        if (@($capabilityPrerequisites.name | Select-Object -Unique).Count -ne $capabilityPrerequisites.Count) {
+            throw "Capability '$($capability.id)' prerequisite command names must be unique."
+        }
+
+        foreach ($prerequisite in $capabilityPrerequisites) {
+            if ([string]::IsNullOrWhiteSpace($prerequisite.name)) {
+                throw "Capability '$($capability.id)' prerequisites must declare a command name."
+            }
+
+            if ($null -ne $prerequisite.minimumMajor -and ($prerequisite.minimumMajor -isnot [long] -or $prerequisite.minimumMajor -lt 1)) {
+                throw "Capability '$($capability.id)' prerequisite '$($prerequisite.name)' must declare a positive integer minimumMajor."
+            }
         }
 
         foreach ($requiredClient in $requiredClients) {

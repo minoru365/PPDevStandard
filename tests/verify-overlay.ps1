@@ -47,6 +47,27 @@ if ($agent365.Count -ne 1 -or $agent365[0].maturity -ne 'experimental' -or $agen
     throw 'Agent 365 must remain experimental and disabled by default.'
 }
 
+$expectedCapabilityPrerequisites = @{
+    'canvas-apps' = @{ name = 'dotnet'; minimumMajor = 10 }
+    'power-automate-flowagent' = @{ name = 'node'; minimumMajor = 18 }
+    'dataverse' = @{ name = 'dotnet'; minimumMajor = 10 }
+    'copilot-studio' = @{ name = 'node'; minimumMajor = 18 }
+}
+foreach ($capabilityId in $expectedCapabilityPrerequisites.Keys) {
+    $capability = @($catalogue.capabilities | Where-Object { $_.id -eq $capabilityId })[0]
+    $expectedPrerequisite = $expectedCapabilityPrerequisites[$capabilityId]
+    $prerequisites = @($capability.prerequisiteCommands)
+    if ($prerequisites.Count -ne 1 -or $null -eq $prerequisites[0].name -or $prerequisites[0].name -ne $expectedPrerequisite.name -or $prerequisites[0].minimumMajor -ne $expectedPrerequisite.minimumMajor) {
+        throw "Capability '$capabilityId' must declare $($expectedPrerequisite.name) major version $($expectedPrerequisite.minimumMajor)."
+    }
+}
+
+$copilotClient = @($catalogue.clients | Where-Object { $_.id -eq 'github-copilot-cli' })[0]
+$copilotPrerequisites = @($copilotClient.prerequisiteCommands)
+if ($copilotPrerequisites.Count -ne 1 -or $copilotPrerequisites[0].name -ne 'node' -or $copilotPrerequisites[0].minimumMajor -ne 22) {
+    throw 'GitHub Copilot CLI must declare Node.js major version 22.'
+}
+
 foreach ($capability in $catalogue.capabilities) {
     if ([string]::IsNullOrWhiteSpace($capability.source.url) -or $capability.source.url -notmatch '^https://') {
         throw "Capability '$($capability.id)' must have an HTTPS source URL."
@@ -102,7 +123,7 @@ if (@($validatedCatalogue.capabilities).Count -ne $requiredCapabilities.Count) {
 $temporaryCataloguePath = Join-Path ([System.IO.Path]::GetTempPath()) ("ppdevstandard-" + [guid]::NewGuid().ToString('N') + '.json')
 try {
     $missingPrerequisiteCatalogue = Get-Content -LiteralPath $cataloguePath -Raw | ConvertFrom-Json -Depth 20
-    $missingPrerequisiteCatalogue.capabilities[0].prerequisiteCommands = @('ppdevstandard-command-not-installed')
+    $missingPrerequisiteCatalogue.capabilities[0].prerequisiteCommands = @([pscustomobject]@{ name = 'ppdevstandard-command-not-installed'; minimumMajor = 1 })
     $missingPrerequisiteCatalogue | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $temporaryCataloguePath -NoNewline
 
     $pwshExecutable = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
@@ -121,6 +142,25 @@ try {
 }
 finally {
     Remove-Item -LiteralPath $temporaryCataloguePath -Force -ErrorAction SilentlyContinue
+}
+
+$versionTooLowCataloguePath = Join-Path ([System.IO.Path]::GetTempPath()) ("ppdevstandard-version-" + [guid]::NewGuid().ToString('N') + '.json')
+try {
+    $versionTooLowCatalogue = Get-Content -LiteralPath $cataloguePath -Raw | ConvertFrom-Json -Depth 20
+    $versionTooLowCatalogue.capabilities[0].prerequisiteCommands = @([pscustomobject]@{ name = 'pwsh'; minimumMajor = 999 })
+    $versionTooLowCatalogue | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $versionTooLowCataloguePath -NoNewline
+
+    $versionOutput = @(& $pwshExecutable -NoProfile -File $prerequisiteCheckPath -Client codex -Capability canvas-apps -CataloguePath $versionTooLowCataloguePath 2>&1 | ForEach-Object { $_.ToString() })
+    if ($LASTEXITCODE -ne 1) {
+        throw 'check-prerequisites must return 1 when a prerequisite major version is too low.'
+    }
+
+    if (($versionOutput -join "`n") -notmatch [regex]::Escape("prerequisite 'pwsh': missing (requires major version 999")) {
+        throw 'check-prerequisites must report a prerequisite major version that is too low.'
+    }
+}
+finally {
+    Remove-Item -LiteralPath $versionTooLowCataloguePath -Force -ErrorAction SilentlyContinue
 }
 
 foreach ($removedPath in @(
@@ -164,6 +204,10 @@ if ((Get-Content -LiteralPath $codexPacCanvasTemplatePath -Raw) -notmatch [regex
 
 if ((Get-Content -LiteralPath $toolingGuidePath -Raw) -match [regex]::Escape('initialize-project.ps1')) {
     throw 'The project tooling guide must not refer to the PPDevStandard initializer path.'
+}
+
+if ((Get-Content -LiteralPath $toolingGuidePath -Raw) -notmatch [regex]::Escape('PPDevStandard のリポジトリ ルート')) {
+    throw 'The project tooling guide must identify PPDevStandard as the location of check-prerequisites.ps1.'
 }
 
 $initializerPath = Join-Path $repositoryRoot 'scripts\initialize-project.ps1'
@@ -241,8 +285,15 @@ finally {
 }
 
 $agentOverlay = Get-Content -LiteralPath $projectAgentTemplatePath -Raw
-foreach ($requiredRule in @('探索・試作', '採用・運用', 'FlowAgent', '明示承認', '認証情報')) {
+foreach ($requiredRule in @('探索・試作', '採用・運用', 'FlowAgent', 'FlowStudio', 'validate_flow', 'preflight_flow', '接続参照', '明示承認', '認証情報')) {
     if ($agentOverlay -notmatch [regex]::Escape($requiredRule)) {
         throw "Project AGENTS template must include '$requiredRule'."
+    }
+}
+
+$toolingGuide = Get-Content -LiteralPath $toolingGuidePath -Raw
+foreach ($requiredGuideTerm in @('.NET 10', 'Node.js 18', 'Node.js 22', 'dv-connect', 'mcs-assistant', 'Power CAT', 'Codex', 'Claude Code', 'GitHub Copilot CLI')) {
+    if ($toolingGuide -notmatch [regex]::Escape($requiredGuideTerm)) {
+        throw "The project tooling guide must include '$requiredGuideTerm'."
     }
 }
