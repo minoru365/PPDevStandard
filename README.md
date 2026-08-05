@@ -67,7 +67,7 @@ pwsh -NoProfile -File scripts/initialize-project.ps1 `
 
 ### 2. ローカルの前提を確認する
 
-`check-prerequisites` は、選択したクライアントと機能に必要なローカルコマンドだけを確認します。プラグインの導入、MCP 接続、認証、ネットワーク、クラウド環境の変更は行いません。
+`check-prerequisites` は、選択したクライアントと機能に必要なローカルコマンドと、台帳に定義した最低メジャーバージョンを確認します。プラグインの導入、MCP 接続、認証、ネットワーク、クラウド環境の変更は行いません。
 
 ```powershell
 pwsh -NoProfile -File scripts/check-prerequisites.ps1 -Client codex -Capability all
