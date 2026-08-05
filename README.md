@@ -1,99 +1,79 @@
 # PPDevStandard
 
-PPDevStandard is a **standalone Power Platform AI development overlay** for
-Codex, Claude Code, and GitHub Copilot CLI. It does not fork or duplicate
-product skills. Instead, it records which upstream tools to use, how each
-client connects to them, and the safety and verification rules that make the
-same development approach repeatable across projects.
+PPDevStandard は、Codex・Claude Code・GitHub Copilot CLI で Power Platform 開発を行うための、**独立した共通 overlay** です。
 
-## What PPDevStandard owns
+製品スキルやプラグインの実装を fork／複製せず、上流・公式の配布元をそのまま使います。PPDevStandard は、各クライアントでの採用状況、安全な運用ルール、機能ごとの診断、プロジェクトに適用するテンプレートを管理します。
 
-| Layer | Owner | Responsibility |
+## PPDevStandard が担うこと
+
+| 層 | 所有者 | 担うこと |
 | --- | --- | --- |
-| Product skills and plugins | Upstream / official publishers | Product implementation and release updates |
-| PPDevStandard | minoru365 | Capability catalogue, client compatibility, safe operating rules, templates, doctor, and canary |
-| Project repository | Project team | Source of truth, Solution, YAML, flow definitions, CI/CD, and production approvals |
+| 製品スキル・プラグイン | 上流・公式配布元 | 製品機能の実装と更新 |
+| PPDevStandard | minoru365 | 機能台帳、クライアント互換性、安全ルール、テンプレート、doctor、canary |
+| 個別プロジェクト | プロジェクトチーム | 正本、Solution、YAML、フロー定義、CI/CD、本番承認 |
 
-Use upstream sources directly:
+製品機能は、次の上流・公式リポジトリを直接利用します。
 
-- [GeekPower CodeAppsDevelopmentStandard](https://github.com/geekfujiwara/CodeAppsDevelopmentStandard)
+- [Geek 氏の CodeAppsDevelopmentStandard](https://github.com/geekfujiwara/CodeAppsDevelopmentStandard)
 - [Microsoft Power Platform Skills](https://github.com/microsoft/power-platform-skills)
 - [Microsoft Dataverse Skills](https://github.com/microsoft/Dataverse-skills)
 - [Microsoft Copilot Studio Skills](https://github.com/microsoft/skills-for-copilot-studio)
 - [Microsoft Power CAT Skills](https://github.com/microsoft/power-cat-skills)
 
-## Capability catalogue
+## 機能台帳
 
-| Capability | Upstream implementation | PPDevStandard adds |
+| 機能 | 上流の実装 | PPDevStandard で補強すること |
 | --- | --- | --- |
-| Canvas Apps | Canvas Authoring MCP and `.pa.yaml` tooling | Client coverage, prerequisite checks, and Git-based promotion rule |
-| Power Automate / FlowAgent | Official FlowAgent plugin and MCP | Stopped-flow default, preflight boundary, and promotion rule |
-| Dataverse | Specialist skills, MCP, PAC CLI, and SDKs | Read-by-default boundary and approval gates |
-| Copilot Studio | YAML authoring, validation, and evaluation skills | Client compatibility and cloud-change approval gate |
-| Power CAT | Overflow and Code Apps / Pro-Code evaluation | Adopted-tool inventory and review evidence rule |
+| Canvas Apps | Canvas Authoring MCP と `.pa.yaml` 開発 | クライアント別の対応、前提確認、Git による昇格ルール |
+| Power Automate / FlowAgent | 公式 FlowAgent プラグインと MCP | 停止状態で作る原則、preflight 境界、採用時の昇格ルール |
+| Dataverse | specialist skills、MCP、PAC CLI、SDK | 読取り既定の境界と承認ゲート |
+| Copilot Studio | YAML 作成・検証・評価スキル | クライアント互換性とクラウド変更の承認ゲート |
+| Power CAT | Overflow、Code Apps／Pro-Code の評価 | 採用済みツールの台帳化とレビュー証跡のルール |
 
-The complete, machine-readable catalogue is
-[`profiles/capabilities.json`](./profiles/capabilities.json). It lists the
-source, package identifier, prerequisites, client coverage, and verification
-boundary for every capability.
+機能ごとの配布元、パッケージ識別子、前提コマンド、クライアント対応、検証境界は [`profiles/capabilities.json`](./profiles/capabilities.json) を正本とします。
 
-## Supported clients
+## 対応クライアント
 
-| Client | Delivery model | Use PPDevStandard for |
+| クライアント | 導入経路 | PPDevStandard の役割 |
 | --- | --- | --- |
-| Codex | Developer-profile skills and MCP | Capability inventory, safe local checks, and project overlay |
-| Claude Code | Official plugin marketplaces and MCP | Same capability and safety policy |
-| GitHub Copilot CLI | Official plugin marketplaces and MCP | Same capability and safety policy |
+| Codex | 開発者プロファイルの skills と MCP | 機能台帳、安全なローカル診断、プロジェクト overlay |
+| Claude Code | 公式 plugin marketplace と MCP | 同じ機能台帳・安全原則の利用 |
+| GitHub Copilot CLI | 公式 plugin marketplace と MCP | 同じ機能台帳・安全原則の利用 |
 
-Client installation and tenant authentication are intentionally local. This
-repository never stores tenant URLs, accounts, tokens, authentication caches,
-or user-specific MCP settings.
+プラグイン導入とテナント認証は、各利用者のローカル環境で行います。このリポジトリにはテナント URL、アカウント、トークン、認証キャッシュ、ユーザー固有の MCP 設定を書きません。
 
-## Start safely
+## 安全に始める
 
-Run the doctor before changing a development environment. It checks declared
-local prerequisites and reports MCP readiness without printing connection
-details.
+変更前に `doctor` を実行し、選択した機能に必要なローカル前提を確認します。接続先の詳細は表示しません。
 
 ```powershell
 pwsh -NoProfile -File scripts/doctor.ps1 -Client codex -Capability all
 ```
 
-Run the canary to review catalogue coverage and the manual verification needed
-for each capability. It does not fetch, install, authenticate, or change a
-cloud environment.
+`canary` は、全機能の採用状況と、開発環境で手動確認が必要な事項を報告します。ネットワーク、認証、インストール、クラウド環境の変更は行いません。
 
 ```powershell
 pwsh -NoProfile -File scripts/canary.ps1
 ```
 
-## Two-lane operating model
+## 二レーン運用
 
 ### 探索・試作
 
-Use MCP and AI skills to create and validate new, temporary development assets:
-Canvas Apps, flows, Copilot Studio agents, or Dataverse test assets. Do not
-replace, delete, publish, or alter managed assets in this lane.
+MCP と AI スキルを使い、開発環境の新規・一時的な Canvas Apps、フロー、Copilot Studio エージェント、Dataverse の試験資産を作成・検証します。このレーンで、管理済み資産の置換、削除、公開、変更は行いません。
 
 ### 採用・運用
 
-When work is shared, long-lived, multi-environment, business-affecting, or
-changes data/security, promote it to Git-managed source: Python, Solution,
-YAML, version-controlled Canvas artifacts, and project CI/CD. Review the
-diff before applying it.
+共有、長期保守、複数環境展開、業務影響、データ・セキュリティ影響を伴う変更は、Python、Solution、YAML、版管理された Canvas 成果物、CI/CD など Git 管理された正本へ昇格します。適用前に差分をレビューします。
 
-Existing assets, publish, deletion, security roles, environment settings,
-Solution import, and production changes always require explicit approval.
+既存資産の操作、公開、削除、セキュリティロール、環境設定、Solution import、本番変更は、常に明示承認が必要です。
 
 ## Agent 365
 
-Agent 365 is experimental and disabled by default. Any activation requires a
-separate human review of Frontier/licensing, Azure, identity, permissions, data
-classification, audit, cost, activation, and retirement.
+Agent 365 は実験扱いで、既定では有効にしません。有効化には、Frontier／ライセンス、Azure、ID、権限、データ分類、監査、コスト、開始、廃止について個別の人によるレビューが必要です。
 
-## Updating upstream tools
+## 上流ツールの更新
 
-Update upstream skills and plugins through their original publishers. Then
-update the relevant catalogue record and run doctor/canary in a development
-environment before adopting the change in a project. PPDevStandard does not
-copy upstream source code, so upstream updates do not create fork-merge work.
+上流のスキルやプラグインは、それぞれの公式配布元で更新します。更新後は、対象機能の台帳を更新し、開発環境で doctor／canary を確認してから、個別プロジェクトへ採用します。
+
+PPDevStandard は上流のソースコードをコピーしないため、上流更新のたびに fork の競合を解消する必要はありません。
