@@ -1,15 +1,15 @@
 # PPDevStandard
 
-PPDevStandard は、Codex・Claude Code・GitHub Copilot CLI で Power Platform 開発を行うための、**独立した共通 overlay** です。
+PPDevStandard は、Codex・Claude Code・GitHub Copilot CLI で共通して使う、Power Platform 開発用の小さな補助リポジトリです。
 
-製品スキルやプラグインの実装を fork／複製せず、上流・公式の配布元をそのまま使います。PPDevStandard は、各クライアントでの採用状況、安全な運用ルール、機能ごとの診断、プロジェクトに適用するテンプレートを管理します。
+製品スキルやプラグインは fork／複製せず、公式の配布元をそのまま利用します。このリポジトリには、機能台帳、クライアント対応、ローカル診断、プロジェクト用テンプレートだけを置きます。
 
 ## PPDevStandard が担うこと
 
 | 層 | 所有者 | 担うこと |
 | --- | --- | --- |
 | 製品スキル・プラグイン | 上流・公式配布元 | 製品機能の実装と更新 |
-| PPDevStandard | minoru365 | 機能台帳、クライアント互換性、安全ルール、テンプレート、doctor、canary |
+| PPDevStandard | minoru365 | 機能台帳、クライアント対応、設定テンプレート、初期化、前提確認 |
 | 個別プロジェクト | プロジェクトチーム | 正本、Solution、YAML、フロー定義、CI/CD、本番承認 |
 
 製品機能は、次の上流・公式リポジトリを直接利用します。
@@ -24,11 +24,11 @@ PPDevStandard は、Codex・Claude Code・GitHub Copilot CLI で Power Platform 
 
 | 機能 | 上流の実装 | PPDevStandard で補強すること |
 | --- | --- | --- |
-| Canvas Apps | Canvas Authoring MCP と `.pa.yaml` 開発 | クライアント別の対応、前提確認、Git による昇格ルール |
-| Power Automate / FlowAgent | 公式 FlowAgent プラグインと MCP | 停止状態で作る原則、preflight 境界、採用時の昇格ルール |
-| Dataverse | specialist skills、MCP、PAC CLI、SDK | 読取り既定の境界と承認ゲート |
-| Copilot Studio | YAML 作成・検証・評価スキル | クライアント互換性とクラウド変更の承認ゲート |
-| Power CAT | Overflow、Code Apps／Pro-Code の評価 | 採用済みツールの台帳化とレビュー証跡のルール |
+| Canvas Apps | Canvas Authoring MCP と `.pa.yaml` 開発 | クライアント対応と前提確認 |
+| Power Automate / FlowAgent | 公式 FlowAgent プラグインと MCP | 前提確認とプロジェクト用テンプレート |
+| Dataverse | specialist skills、MCP、PAC CLI、SDK | クライアント対応と前提確認 |
+| Copilot Studio | YAML 作成・検証・評価スキル | クライアント対応とテンプレート |
+| Power CAT | Overflow、Code Apps／Pro-Code の評価 | 採用ツールの台帳化 |
 
 機能ごとの配布元、パッケージ識別子、前提コマンド、クライアント対応、検証境界は [`profiles/capabilities.json`](./profiles/capabilities.json) を正本とします。
 
@@ -42,38 +42,43 @@ PPDevStandard は、Codex・Claude Code・GitHub Copilot CLI で Power Platform 
 
 プラグイン導入とテナント認証は、各利用者のローカル環境で行います。このリポジトリにはテナント URL、アカウント、トークン、認証キャッシュ、ユーザー固有の MCP 設定を書きません。
 
-## 安全に始める
+## 他のリポジトリへ適用する
 
-変更前に `doctor` を実行し、選択した機能に必要なローカル前提を確認します。接続先の詳細は表示しません。
+### 1. まずプレビューする
 
-```powershell
-pwsh -NoProfile -File scripts/doctor.ps1 -Client codex -Capability all
-```
-
-`canary` は、全機能の採用状況と、開発環境で手動確認が必要な事項を報告します。ネットワーク、認証、インストール、クラウド環境の変更は行いません。
+対象リポジトリを明示して、配置予定の共通設定を確認します。この時点ではファイルを書き換えません。
 
 ```powershell
-pwsh -NoProfile -File scripts/canary.ps1
+pwsh -NoProfile -File scripts/initialize-project.ps1 `
+    -TargetPath C:\work\my-power-platform-project `
+    -Client codex `
+    -Capability canvas-apps
 ```
 
-## 二レーン運用
+配置してよければ、同じコマンドに `-Apply` を付けます。既存の `.mcp.json`、`.codex/config.toml`、`AGENTS.md`、ツール文書は上書きせず、手動マージが必要なことを表示します。
 
-### 探索・試作
+```powershell
+pwsh -NoProfile -File scripts/initialize-project.ps1 `
+    -TargetPath C:\work\my-power-platform-project `
+    -Client codex `
+    -Capability canvas-apps `
+    -Apply
+```
 
-MCP と AI スキルを使い、開発環境の新規・一時的な Canvas Apps、フロー、Copilot Studio エージェント、Dataverse の試験資産を作成・検証します。このレーンで、管理済み資産の置換、削除、公開、変更は行いません。
+### 2. ローカルの前提を確認する
 
-### 採用・運用
+`check-prerequisites` は、選択したクライアントと機能に必要なローカルコマンドだけを確認します。プラグインの導入、MCP 接続、認証、ネットワーク、クラウド環境の変更は行いません。
 
-共有、長期保守、複数環境展開、業務影響、データ・セキュリティ影響を伴う変更は、Python、Solution、YAML、版管理された Canvas 成果物、CI/CD など Git 管理された正本へ昇格します。適用前に差分をレビューします。
+```powershell
+pwsh -NoProfile -File scripts/check-prerequisites.ps1 -Client codex -Capability all
+```
 
-既存資産の操作、公開、削除、セキュリティロール、環境設定、Solution import、本番変更は、常に明示承認が必要です。
+### 3. 公式プラグインを導入し、接続する
 
-## Agent 365
-
-Agent 365 は実験扱いで、既定では有効にしません。有効化には、Frontier／ライセンス、Azure、ID、権限、データ分類、監査、コスト、開始、廃止について個別の人によるレビューが必要です。
+生成された [`docs/AI_DEVELOPMENT_TOOLING.md`](./docs/AI_DEVELOPMENT_TOOLING.md) に従い、公式プラグインを開発者プロファイルへ導入します。Dataverse の接続先と認証は各開発者のローカル設定だけに置きます。
 
 ## 上流ツールの更新
 
-上流のスキルやプラグインは、それぞれの公式配布元で更新します。更新後は、対象機能の台帳を更新し、開発環境で doctor／canary を確認してから、個別プロジェクトへ採用します。
+上流のスキルやプラグインは、それぞれの公式配布元で更新します。更新後は、対象機能の台帳を更新し、`check-prerequisites` とプロジェクトでの手動確認を行います。
 
 PPDevStandard は上流のソースコードをコピーしないため、上流更新のたびに fork の競合を解消する必要はありません。
