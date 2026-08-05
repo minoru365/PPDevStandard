@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "updated": "2026-08-06",
+  "clients": [
+    {
+      "id": "codex",
+      "displayName": "Codex",
+      "integrationModel": "developer-profile skills and MCP"
+    },
+    {
+      "id": "claude-code",
+      "displayName": "Claude Code",
+      "integrationModel": "official plugin marketplace and MCP"
+    },
+    {
+      "id": "github-copilot-cli",
+      "displayName": "GitHub Copilot CLI",
+      "integrationModel": "official plugin marketplace and MCP"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "power-platform-core",
+      "maturity": "supported",
+      "default": true
+    },
+    {
+      "id": "agent365",
+      "maturity": "experimental",
+      "default": false
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "canvas-apps",
+      "name": "Canvas Apps",
+      "source": {
+        "repository": "microsoft/power-platform-skills",
+        "url": "https://github.com/microsoft/power-platform-skills",
+        "package": "canvas-apps@power-platform-skills"
+      },
+      "prerequisiteCommands": ["dotnet"],
+      "clientSupport": [
+        { "clientId": "codex", "status": "supported-with-manual-setup", "verification": "confirm Canvas Authoring MCP in the active developer profile" },
+        { "clientId": "claude-code", "status": "supported", "verification": "confirm the canvas-apps plugin and canvas-authoring MCP" },
+        { "clientId": "github-copilot-cli", "status": "supported", "verification": "confirm the canvas-apps plugin and canvas-authoring MCP" }
+      ],
+      "explorationRule": "Create or edit only new, temporary Canvas Apps in a development environment.",
+      "promotionRule": "Promote approved .pa.yaml or version-controlled Canvas artifacts through Git review before deployment."
+    },
+    {
+      "id": "power-automate-flowagent",
+      "name": "Power Automate / FlowAgent",
+      "source": {
+        "repository": "microsoft/power-platform-skills",
+        "url": "https://github.com/microsoft/power-platform-skills",
+        "package": "power-automate@power-platform-skills"
+      },
+      "prerequisiteCommands": ["node"],
+      "clientSupport": [
+        { "clientId": "codex", "status": "supported-with-manual-setup", "verification": "confirm the official power-automate skill and FlowAgent MCP" },
+        { "clientId": "claude-code", "status": "supported", "verification": "confirm the power-automate plugin and FlowAgent MCP" },
+        { "clientId": "github-copilot-cli", "status": "supported", "verification": "confirm the power-automate plugin and FlowAgent MCP" }
+      ],
+      "explorationRule": "Create new development flows in a stopped state; use connector discovery, validation, preflight, and failure diagnosis.",
+      "promotionRule": "Promote reviewed flow definitions, connection references, and tests into the managed Solution or project source before activation."
+    },
+    {
+      "id": "dataverse",
+      "name": "Dataverse",
+      "source": {
+        "repository": "microsoft/Dataverse-skills",
+        "url": "https://github.com/microsoft/Dataverse-skills",
+        "package": "dataverse@dataverse-skills"
+      },
+      "prerequisiteCommands": ["dotnet"],
+      "clientSupport": [
+        { "clientId": "codex", "status": "supported-with-manual-setup", "verification": "confirm Dataverse specialist skills and the approved MCP connection" },
+        { "clientId": "claude-code", "status": "supported", "verification": "confirm the Dataverse plugin and approved MCP connection" },
+        { "clientId": "github-copilot-cli", "status": "supported", "verification": "confirm the Dataverse plugin and approved MCP connection" }
+      ],
+      "explorationRule": "Use metadata inspection and read queries by default; state the target and rollback path for temporary development assets.",
+      "promotionRule": "Require explicit approval for managed schema/data changes, deletion, security changes, environment changes, Solution import, and publish."
+    },
+    {
+      "id": "copilot-studio",
+      "name": "Copilot Studio",
+      "source": {
+        "repository": "microsoft/skills-for-copilot-studio",
+        "url": "https://github.com/microsoft/skills-for-copilot-studio",
+        "package": "copilot-studio@skills-for-copilot-studio"
+      },
+      "prerequisiteCommands": ["node"],
+      "clientSupport": [
+        { "clientId": "codex", "status": "supported-with-manual-setup", "verification": "confirm Copilot Studio YAML skills in the active developer profile" },
+        { "clientId": "claude-code", "status": "supported", "verification": "confirm the Copilot Studio plugin" },
+        { "clientId": "github-copilot-cli", "status": "supported", "verification": "confirm the Copilot Studio plugin" }
+      ],
+      "explorationRule": "Create, validate, and evaluate YAML in a development environment; inspect cloud state before any change.",
+      "promotionRule": "Require explicit approval for pull, push, publish, channel configuration, or changes to an existing cloud agent."
+    },
+    {
+      "id": "power-cat",
+      "name": "Power CAT",
+      "source": {
+        "repository": "microsoft/power-cat-skills",
+        "url": "https://github.com/microsoft/power-cat-skills",
+        "package": "powercat-overflow and pro-code evaluation skills"
+      },
+      "prerequisiteCommands": ["node"],
+      "clientSupport": [
+        { "clientId": "codex", "status": "supported-with-manual-setup", "verification": "confirm adopted Power CAT evaluation skills; do not assume Dataverse skill availability" },
+        { "clientId": "claude-code", "status": "supported", "verification": "confirm Code Apps, Pro-Code evaluation, and Overflow skills" },
+        { "clientId": "github-copilot-cli", "status": "supported", "verification": "confirm Code Apps, Pro-Code evaluation, and Overflow skills" }
+      ],
+      "explorationRule": "Use Overflow and evaluation tooling to review disposable development artifacts and Solution exports.",
+      "promotionRule": "Treat findings as review evidence; apply fixes through the managed source and project approval process."
+    }
+  ]
+}
