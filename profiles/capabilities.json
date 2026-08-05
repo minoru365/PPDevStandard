@@ -5,17 +5,22 @@
     {
       "id": "codex",
       "displayName": "Codex",
-      "integrationModel": "developer-profile skills and MCP"
+      "integrationModel": "developer-profile skills and MCP",
+      "prerequisiteCommands": []
     },
     {
       "id": "claude-code",
       "displayName": "Claude Code",
-      "integrationModel": "official plugin marketplace and MCP"
+      "integrationModel": "official plugin marketplace and MCP",
+      "prerequisiteCommands": []
     },
     {
       "id": "github-copilot-cli",
       "displayName": "GitHub Copilot CLI",
-      "integrationModel": "official plugin marketplace and MCP"
+      "integrationModel": "official plugin marketplace and MCP",
+      "prerequisiteCommands": [
+        { "name": "node", "minimumMajor": 22 }
+      ]
     }
   ],
   "profiles": [
@@ -39,7 +44,9 @@
         "url": "https://github.com/microsoft/power-platform-skills",
         "package": "canvas-apps@power-platform-skills"
       },
-      "prerequisiteCommands": ["dotnet"],
+      "prerequisiteCommands": [
+        { "name": "dotnet", "minimumMajor": 10 }
+      ],
       "clientSupport": [
         { "clientId": "codex", "status": "supported-with-manual-setup", "verification": "confirm Canvas Authoring MCP in the active developer profile" },
         { "clientId": "claude-code", "status": "supported", "verification": "confirm the canvas-apps plugin and canvas-authoring MCP" },
@@ -56,7 +63,9 @@
         "url": "https://github.com/microsoft/power-platform-skills",
         "package": "power-automate@power-platform-skills"
       },
-      "prerequisiteCommands": ["node"],
+      "prerequisiteCommands": [
+        { "name": "node", "minimumMajor": 18 }
+      ],
       "clientSupport": [
         { "clientId": "codex", "status": "supported-with-manual-setup", "verification": "confirm the official power-automate skill and FlowAgent MCP" },
         { "clientId": "claude-code", "status": "supported", "verification": "confirm the power-automate plugin and FlowAgent MCP" },
@@ -73,7 +82,9 @@
         "url": "https://github.com/microsoft/Dataverse-skills",
         "package": "dataverse@dataverse-skills"
       },
-      "prerequisiteCommands": ["dotnet"],
+      "prerequisiteCommands": [
+        { "name": "dotnet", "minimumMajor": 10 }
+      ],
       "clientSupport": [
         { "clientId": "codex", "status": "supported-with-manual-setup", "verification": "confirm Dataverse specialist skills and the approved MCP connection" },
         { "clientId": "claude-code", "status": "supported", "verification": "confirm the Dataverse plugin and approved MCP connection" },
@@ -90,7 +101,9 @@
         "url": "https://github.com/microsoft/skills-for-copilot-studio",
         "package": "copilot-studio@skills-for-copilot-studio"
       },
-      "prerequisiteCommands": ["node"],
+      "prerequisiteCommands": [
+        { "name": "node", "minimumMajor": 18 }
+      ],
       "clientSupport": [
         { "clientId": "codex", "status": "supported-with-manual-setup", "verification": "confirm Copilot Studio YAML skills in the active developer profile" },
         { "clientId": "claude-code", "status": "supported", "verification": "confirm the Copilot Studio plugin" },
@@ -107,7 +120,9 @@
         "url": "https://github.com/microsoft/power-cat-skills",
         "package": "powercat-overflow and pro-code evaluation skills"
       },
-      "prerequisiteCommands": ["node"],
+      "prerequisiteCommands": [
+        { "name": "node" }
+      ],
       "clientSupport": [
         { "clientId": "codex", "status": "supported-with-manual-setup", "verification": "confirm adopted Power CAT evaluation skills; do not assume Dataverse skill availability" },
         { "clientId": "claude-code", "status": "supported", "verification": "confirm Code Apps, Pro-Code evaluation, and Overflow skills" },

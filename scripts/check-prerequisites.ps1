@@ -13,25 +13,39 @@ param(
 $ErrorActionPreference = 'Stop'
 
 function Test-PPDevCommand {
-    param([Parameter(Mandatory)][string]$Name)
+    param(
+        [Parameter(Mandatory)][string]$Name,
+        [Nullable[int]]$MinimumMajor
+    )
 
     $command = Get-Command -Name $Name -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($null -eq $command) {
-        return [pscustomobject]@{ Present = $false; VersionStatus = 'not-checkable' }
+        return [pscustomobject]@{ Present = $false; VersionStatus = 'not-checkable'; MajorVersion = $null; MinimumMajor = $MinimumMajor }
     }
 
     $versionStatus = 'not-checkable'
+    $majorVersion = $null
     try {
-        & $command.Source '--version' *> $null
+        $versionOutput = @(& $command.Source '--version' 2>$null | ForEach-Object { $_.ToString() }) -join "`n"
         if ($LASTEXITCODE -eq 0) {
             $versionStatus = 'present'
+            $versionMatch = [regex]::Match($versionOutput, '(?<!\d)(?<major>\d+)(?:\.\d+){0,3}')
+            if ($versionMatch.Success) {
+                $majorVersion = [int]$versionMatch.Groups['major'].Value
+            }
         }
     }
     catch {
         $versionStatus = 'not-checkable'
     }
 
-    [pscustomobject]@{ Present = $true; VersionStatus = $versionStatus }
+    $isTooLow = $null -ne $MinimumMajor -and $null -ne $majorVersion -and $majorVersion -lt $MinimumMajor
+    [pscustomobject]@{
+        Present = -not $isTooLow
+        VersionStatus = if ($isTooLow) { 'too-low' } else { $versionStatus }
+        MajorVersion = $majorVersion
+        MinimumMajor = $MinimumMajor
+    }
 }
 
 $validatorPath = Join-Path $PSScriptRoot 'validate-catalogue.ps1'
@@ -73,16 +87,38 @@ else {
     $hasMissingPrerequisite = $true
 }
 
+$selectedClient = @($catalogue.clients | Where-Object { $_.id -eq $Client })[0]
+foreach ($clientPrerequisite in @($selectedClient.prerequisiteCommands)) {
+    $status = Test-PPDevCommand -Name $clientPrerequisite.name -MinimumMajor $clientPrerequisite.minimumMajor
+    if ($status.Present) {
+        $versionLabel = if ($null -ne $status.MajorVersion) { "major version $($status.MajorVersion)" } else { $status.VersionStatus }
+        Write-Output "client prerequisite '$($clientPrerequisite.name)': present ($versionLabel)"
+    }
+    elseif ($status.VersionStatus -eq 'too-low') {
+        Write-Output "client prerequisite '$($clientPrerequisite.name)': missing (requires major version $($status.MinimumMajor); found $($status.MajorVersion))"
+        $hasMissingPrerequisite = $true
+    }
+    else {
+        Write-Output "client prerequisite '$($clientPrerequisite.name)': missing"
+        $hasMissingPrerequisite = $true
+    }
+}
+
 foreach ($selectedCapability in $selectedCapabilities) {
     $clientSupport = @($selectedCapability.clientSupport | Where-Object { $_.clientId -eq $Client })[0]
     Write-Output "機能: $($selectedCapability.name) [$($clientSupport.status)]"
-    foreach ($prerequisite in @($selectedCapability.prerequisiteCommands | Select-Object -Unique)) {
-        $status = Test-PPDevCommand -Name $prerequisite
+    foreach ($prerequisite in @($selectedCapability.prerequisiteCommands)) {
+        $status = Test-PPDevCommand -Name $prerequisite.name -MinimumMajor $prerequisite.minimumMajor
         if ($status.Present) {
-            Write-Output "prerequisite '$prerequisite': present ($($status.VersionStatus))"
+            $versionLabel = if ($null -ne $status.MajorVersion) { "major version $($status.MajorVersion)" } else { $status.VersionStatus }
+            Write-Output "prerequisite '$($prerequisite.name)': present ($versionLabel)"
+        }
+        elseif ($status.VersionStatus -eq 'too-low') {
+            Write-Output "prerequisite '$($prerequisite.name)': missing (requires major version $($status.MinimumMajor); found $($status.MajorVersion))"
+            $hasMissingPrerequisite = $true
         }
         else {
-            Write-Output "prerequisite '$prerequisite': missing"
+            Write-Output "prerequisite '$($prerequisite.name)': missing"
             $hasMissingPrerequisite = $true
         }
     }
