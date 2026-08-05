@@ -73,3 +73,52 @@ foreach ($artifact in @($cataloguePath, $readmePath)) {
         throw "Sensitive or tenant-specific configuration is not allowed in '$artifact'."
     }
 }
+
+$validatorPath = Join-Path $repositoryRoot 'scripts\validate-catalogue.ps1'
+if (-not (Test-Path -LiteralPath $validatorPath)) {
+    throw 'Expected scripts/validate-catalogue.ps1 to exist.'
+}
+
+$doctorPath = Join-Path $repositoryRoot 'scripts\doctor.ps1'
+if (-not (Test-Path -LiteralPath $doctorPath)) {
+    throw 'Expected scripts/doctor.ps1 to exist.'
+}
+
+$validator = Get-Content -LiteralPath $validatorPath -Raw
+$doctor = Get-Content -LiteralPath $doctorPath -Raw
+$forbiddenAutomation = 'Connect-|az login|Invoke-WebRequest|Invoke-RestMethod|npm install|plugin install|git push|\$env:'
+foreach ($scriptArtifact in @($validator, $doctor)) {
+    if ($scriptArtifact -match $forbiddenAutomation) {
+        throw 'Catalogue validation and doctor must not authenticate, install, push, or read environment values.'
+    }
+}
+
+$null = . $validatorPath
+$validatedCatalogue = Get-PPDevCatalogue -Path $cataloguePath
+if (@($validatedCatalogue.capabilities).Count -ne $requiredCapabilities.Count) {
+    throw 'Get-PPDevCatalogue must return every declared capability.'
+}
+
+$temporaryCataloguePath = Join-Path ([System.IO.Path]::GetTempPath()) ("ppdevstandard-" + [guid]::NewGuid().ToString('N') + '.json')
+try {
+    $missingPrerequisiteCatalogue = Get-Content -LiteralPath $cataloguePath -Raw | ConvertFrom-Json -Depth 20
+    $missingPrerequisiteCatalogue.capabilities[0].prerequisiteCommands = @('ppdevstandard-command-not-installed')
+    $missingPrerequisiteCatalogue | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $temporaryCataloguePath -NoNewline
+
+    $pwshExecutable = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
+    $doctorOutput = @(& $pwshExecutable -NoProfile -File $doctorPath -Client codex -Capability canvas-apps -SkipMcpConfigCheck -CataloguePath $temporaryCataloguePath 2>&1 | ForEach-Object { $_.ToString() })
+    if ($LASTEXITCODE -ne 1) {
+        throw 'doctor must return 1 when a declared prerequisite is missing.'
+    }
+
+    if ($doctorOutput -notcontains "prerequisite 'ppdevstandard-command-not-installed': missing") {
+        throw 'doctor must report the missing declared prerequisite.'
+    }
+
+    if (($doctorOutput -join "`n") -match $sensitivePattern) {
+        throw 'doctor must not print sensitive or tenant-specific output.'
+    }
+}
+finally {
+    Remove-Item -LiteralPath $temporaryCataloguePath -Force -ErrorAction SilentlyContinue
+}
