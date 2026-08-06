@@ -1,8 +1,24 @@
 # PPDevStandard
 
-PPDevStandard は、Codex・Claude Code・GitHub Copilot CLI で共通して使う、Power Platform 開発用の小さな補助リポジトリです。
+PPDevStandard は、Canvas アプリを手作業で少し扱った経験はあるものの、AI 駆動開発は初めてという人が、Power Platform 開発の準備を繰り返さずに始めるための補助リポジトリです。
 
-製品スキルやプラグインは fork／複製せず、公式の配布元をそのまま利用します。このリポジトリには、機能台帳、クライアント対応、ローカル診断、プロジェクト用テンプレートだけを置きます。
+Codex、Claude Code、GitHub Copilot CLI で共通して使う「機能の台帳」「安全な前提確認」「プロジェクト向け設定テンプレート」をまとめています。アプリ、Solution、フロー、テナント設定そのものをここで管理するものではありません。
+
+## 先に知っておくこと
+
+AI は、どのファイルが正本か、どの環境なら操作してよいか、何を確認してから公開するかを自動では知りません。このリポジトリで共通の準備を行い、**リポジトリごと**にその情報を AI へ渡します。
+
+| いつ行うか | やること | どこで行うか |
+| --- | --- | --- |
+| PC ごとに一度だけ | AI クライアント、公式プラグイン、.NET / Node.js を準備する。Dataverse を使う場合は開発環境へローカル接続する。 | 自分の開発 PC |
+| 新しいリポジトリごと | 共通設定をプレビューして適用し、正本・開発環境・検証方法・承認条件を記入する。 | 対象リポジトリ |
+| AI に作業を頼むたび | 対象、影響、検証方法を確認してから調査・変更・検証する。 | 対象リポジトリと開発環境 |
+
+初めてなら、次の順で進めてください。
+
+1. [個別リポジトリ向けの実践ガイド](./docs/AI_DEVELOPMENT_TOOLING.md)で、使う AI クライアントの一度だけの準備を行う。
+2. この README の「他のリポジトリへ適用する」で、対象リポジトリをまずプレビューする。
+3. プレビュー結果を確認してから `-Apply` を付け、作成された `AGENTS.md` と `docs/AI_DEVELOPMENT_TOOLING.md` をそのプロジェクト用に完成させる。
 
 ## PPDevStandard が担うこと
 
@@ -20,17 +36,17 @@ PPDevStandard は、Codex・Claude Code・GitHub Copilot CLI で共通して使�
 - [Microsoft Copilot Studio Skills](https://github.com/microsoft/skills-for-copilot-studio)
 - [Microsoft Power CAT Skills](https://github.com/microsoft/power-cat-skills)
 
-## 機能台帳
-
-| 機能 | 上流の実装 | PPDevStandard で補強すること |
-| --- | --- | --- |
-| Canvas Apps | Canvas Authoring MCP と `.pa.yaml` 開発 | クライアント対応と前提確認 |
-| Power Automate / FlowAgent | 公式 FlowAgent プラグインと MCP | 前提確認とプロジェクト用テンプレート |
-| Dataverse | specialist skills、MCP、PAC CLI、SDK | クライアント対応と前提確認 |
-| Copilot Studio | YAML 作成・検証・評価スキル | クライアント対応とテンプレート |
-| Power CAT | Overflow、Code Apps／Pro-Code の評価 | 採用ツールの台帳化 |
-
 機能ごとの配布元、パッケージ識別子、前提コマンド、クライアント対応、検証境界は [`profiles/capabilities.json`](./profiles/capabilities.json) を正本とします。
+
+## 扱う Power Platform 機能
+
+| 機能 | AI で始める作業 | プロジェクトで管理する正本 |
+| --- | --- | --- |
+| Canvas Apps | Canvas Authoring MCP を使った開発環境での試作 | 版管理された Canvas 成果物 |
+| Power Automate / FlowAgent | フローの探索、新規試作、接続調査、失敗診断 | フロー定義、Solution、接続参照 |
+| Dataverse | メタデータとレコードの読取り調査 | スキーマ、Solution、スクリプト |
+| Copilot Studio | YAML の作成、検証、評価 | Git 管理された YAML |
+| Power CAT | Solution 内フローや Code Apps の品質確認 | レビュー結果とプロジェクトの正本 |
 
 ## 対応クライアント
 
@@ -46,36 +62,57 @@ PPDevStandard は、Codex・Claude Code・GitHub Copilot CLI で共通して使�
 
 ### 1. まずプレビューする
 
-対象リポジトリを明示して、配置予定の共通設定を確認します。この時点ではファイルを書き換えません。
+次の3つは**自分のプロジェクトに合わせて変更する値**です。
+
+| 変数 | 何を入れるか | 例 |
+| --- | --- | --- |
+| `$targetPath` | 設定を適用する対象リポジトリのフォルダー | `C:\work\my-power-platform-project` |
+| `$clients` | 使う AI クライアント。複数使うなら `all` | `codex` / `claude-code` / `github-copilot-cli` / `all` |
+| `$capabilities` | そのリポジトリで扱う Power Platform の機能 | `canvas-apps` / `dataverse` / `all` など |
+
+まずは、次のコマンドを PowerShell で実行します。これは**プレビュー**であり、まだファイルを作成・変更しません。
 
 ```powershell
+$targetPath = 'C:\work\my-power-platform-project' # 自分の対象リポジトリに変更する
+$clients = 'all' # codex / claude-code / github-copilot-cli / all
+$capabilities = 'canvas-apps' # all / canvas-apps / power-automate-flowagent / dataverse / copilot-studio / power-cat
+
 pwsh -NoProfile -File scripts/initialize-project.ps1 `
-    -TargetPath C:\work\my-power-platform-project `
-    -Client codex `
-    -Capability canvas-apps
+    -TargetPath $targetPath `
+    -Client $clients `
+    -Capability $capabilities
 ```
 
-配置してよければ、同じコマンドに `-Apply` を付けます。既存の `.mcp.json`、`.codex/config.toml`、`AGENTS.md`、ツール文書は上書きせず、手動マージが必要なことを表示します。
+出力の `would create` は「このファイルを新しく作る予定」、`manual merge required` は「同名ファイルがあるため、上書きせず自分で統合する必要がある」という意味です。既存のファイルがある場合は、内容を確認してから進めてください。
+
+### 2. 確認できたら適用する
+
+プレビュー結果に問題がなければ、同じコマンドの最後に `-Apply` を付けます。`-Apply` は唯一の書込み用スイッチです。既存の `.mcp.json`、`.codex/config.toml`、`AGENTS.md`、ツール文書は上書きしません。
 
 ```powershell
 pwsh -NoProfile -File scripts/initialize-project.ps1 `
-    -TargetPath C:\work\my-power-platform-project `
-    -Client codex `
-    -Capability canvas-apps `
+    -TargetPath $targetPath `
+    -Client $clients `
+    -Capability $capabilities `
     -Apply
 ```
 
-### 2. ローカルの前提を確認する
+適用後は、対象リポジトリに作成された `AGENTS.md` と `docs/AI_DEVELOPMENT_TOOLING.md` を読み、`<...>` で示された項目をそのプロジェクトの情報に置き換えます。
+
+### 3. ローカルの前提を確認する
 
 `check-prerequisites` は、選択したクライアントと機能に必要なローカルコマンドと、台帳に定義した最低メジャーバージョンを確認します。プラグインの導入、MCP 接続、認証、ネットワーク、クラウド環境の変更は行いません。
 
+この確認では、1 回に 1 つのクライアントを指定します。次の2つを自分の環境に合わせて変更してください。
+
 ```powershell
-pwsh -NoProfile -File scripts/check-prerequisites.ps1 -Client codex -Capability all
+$client = 'codex' # codex / claude-code / github-copilot-cli
+$capability = 'all' # all / canvas-apps / power-automate-flowagent / dataverse / copilot-studio / power-cat
+
+pwsh -NoProfile -File scripts/check-prerequisites.ps1 -Client $client -Capability $capability
 ```
 
-### 3. 公式プラグインを導入し、接続する
-
-生成された [`docs/AI_DEVELOPMENT_TOOLING.md`](./docs/AI_DEVELOPMENT_TOOLING.md) に従い、公式プラグインを開発者プロファイルへ導入します。Dataverse の接続先と認証は各開発者のローカル設定だけに置きます。
+`missing` と表示された場合は、実践ガイドの「一度だけ行うこと」を確認し、必要なツールをローカルに導入してからもう一度実行します。
 
 ## 上流ツールの更新
 
