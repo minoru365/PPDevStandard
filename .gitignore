@@ -1,0 +1,20 @@
+# PowerShell / .NET
+*.ps1xml.bak
+
+# エディター・OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 一時ファイル・ローカル検証結果
+*.log
+*.tmp
+tmp/
+out/
+
+# ローカル固有の設定（テナント URL・接続情報を含む可能性があるため）
+.mcp.local.json
+.codex/config.local.toml
+.env
+.env.*

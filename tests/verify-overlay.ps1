@@ -52,6 +52,7 @@ $expectedCapabilityPrerequisites = @{
     'power-automate-flowagent' = @{ name = 'node'; minimumMajor = 18 }
     'dataverse' = @{ name = 'dotnet'; minimumMajor = 10 }
     'copilot-studio' = @{ name = 'node'; minimumMajor = 18 }
+    'power-cat' = @{ name = 'node'; minimumMajor = 18 }
 }
 foreach ($capabilityId in $expectedCapabilityPrerequisites.Keys) {
     $capability = @($catalogue.capabilities | Where-Object { $_.id -eq $capabilityId })[0]
