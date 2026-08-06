@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-08-06",
+  "updated": "2026-08-07",
   "clients": [
     {
       "id": "codex",
@@ -121,7 +121,7 @@
         "package": "powercat-overflow and pro-code evaluation skills"
       },
       "prerequisiteCommands": [
-        { "name": "node" }
+        { "name": "node", "minimumMajor": 18 }
       ],
       "clientSupport": [
         { "clientId": "codex", "status": "supported-with-manual-setup", "verification": "confirm adopted Power CAT evaluation skills; do not assume Dataverse skill availability" },

@@ -1,0 +1,25 @@
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-overlay:
+    # verify-overlay.ps1 は Windows のパス区切りを前提にしているため windows-latest で実行する
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate capability catalogue
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/validate-catalogue.ps1
+
+      - name: Verify overlay
+        shell: pwsh
+        run: pwsh -NoProfile -File tests/verify-overlay.ps1

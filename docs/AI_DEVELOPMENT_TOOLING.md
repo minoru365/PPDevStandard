@@ -56,7 +56,7 @@ $capability = 'canvas-apps' # all / canvas-apps / power-automate-flowagent / dat
 pwsh -NoProfile -File scripts/check-prerequisites.ps1 -Client $client -Capability $capability
 ```
 
-Canvas Apps と PAC MCP には **.NET 10** 以上が必要です。FlowAgent と Copilot Studio YAML skills には **Node.js 18** 以上、GitHub Copilot CLI には **Node.js 22** 以上が必要です。このコマンドは確認だけを行い、プラグインの導入、MCP 接続、認証、ネットワーク、クラウド環境を変更しません。
+Canvas Apps と PAC MCP には **.NET 10** 以上が必要です。FlowAgent、Copilot Studio YAML skills、Power CAT には **Node.js 18** 以上、GitHub Copilot CLI には **Node.js 22** 以上が必要です。このコマンドは確認だけを行い、プラグインの導入、MCP 接続、認証、ネットワーク、クラウド環境を変更しません。
 
 ### 3. Dataverse を開発者ローカルで接続する
 
@@ -82,6 +82,8 @@ Dataverse MCP の接続先は開発者と環境ごとに異なります。公式
 | `docs/AI_DEVELOPMENT_TOOLING.md` | この導入・運用ガイド | チームへ共有し、使うクライアントの節を確認する |
 | `.mcp.json` | Claude Code / Copilot CLI が使うプロジェクト MCP 設定 | 接続先や資格情報が含まれていないことを確認する |
 | `.codex/config.toml` | Codex のプロジェクト設定 | Codex を使う場合だけ、MCP が想定どおりであることを確認する |
+
+`.mcp.json` には `pac-cli` だけが入ります。Claude Code と GitHub Copilot CLI では Canvas Authoring MCP が公式プラグイン側から提供されるためです。Codex はプラグインが同じ役割を果たさないので、Canvas Apps を使う場合は `.codex/config.toml` に `canvas-authoring` が含まれます。いずれの場合も、新しい会話で MCP が実際に使えることを確認してください。
 
 ## 指示ファイルをどう分けるか
 
