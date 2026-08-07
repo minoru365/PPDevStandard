@@ -159,7 +159,10 @@ Copilot CLI では `/instructions` で読み込まれた指示を確認できま
 | 既存フローの変更 | プロジェクト固有のフロー定義・Solution・スクリプト | FlowAgent の結果を確認材料にし、正本を迂回して変更しない。 |
 | Dataverse のメタデータ・レコード調査 | Dataverse Skills / MCP | 読取りを既定にする。既存資産、削除、ロール、環境変更は明示承認後。 |
 | Canvas Apps の試作 | Canvas Authoring MCP | 新規の開発環境 coauthoring セッションだけで行う。採用時は版管理成果物をレビューする。 |
+| Code Apps の実装・ローカル実行・データソース追加 | 公式 Code Apps skills と PAC CLI | デプロイ先は開発環境に限る。共有・本番環境への公開は明示承認後。 |
 | Copilot Studio の作成・検証・評価 | 公式 YAML skills | 既存エージェントの push / publish / チャネル変更は明示承認後。 |
 | Solution 内フロー・Code Apps の品質確認 | Power CAT | 指摘はレビュー材料とし、修正はプロジェクトの正本へ行う。 |
 
 FlowAgent の新規フローは、開発環境で停止状態に作成し、`validate_flow`、`preflight_flow`、接続参照のレビューを通します。既存 Solution の接続参照を優先し、接続を自動作成しません。有効化、公開、Solution import は、対象と影響を示した明示承認後だけにします。
+
+機能ごとに実際に踏んだ落とし穴は `profiles/capabilities.json` の `knownPitfalls` に記録しています。作業前に該当機能の項目を確認してください。特に Code Apps は、CLI パッケージの宣言、`pac code push` と `npx power-apps push` の使い分け、認証ラッパー経由での失敗、生成物が gitignore 対象であることの4点が繰り返し問題になります。

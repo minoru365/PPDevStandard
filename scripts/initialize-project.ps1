@@ -7,7 +7,7 @@ param(
     [ValidateSet('all', 'codex', 'claude-code', 'github-copilot-cli')]
     [string[]]$Client = @('all'),
 
-    [ValidateSet('all', 'canvas-apps', 'power-automate-flowagent', 'dataverse', 'copilot-studio', 'power-cat')]
+    [ValidateSet('all', 'canvas-apps', 'code-apps', 'power-automate-flowagent', 'dataverse', 'copilot-studio', 'power-cat')]
     [string[]]$Capability = @('all'),
 
     [switch]$Apply

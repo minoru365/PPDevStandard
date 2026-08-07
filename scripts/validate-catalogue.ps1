@@ -26,7 +26,7 @@ function Get-PPDevCatalogue {
     $profiles = @($catalogue.profiles)
     $capabilities = @($catalogue.capabilities)
     $requiredClients = @('codex', 'claude-code', 'github-copilot-cli')
-    $requiredCapabilities = @('canvas-apps', 'power-automate-flowagent', 'dataverse', 'copilot-studio', 'power-cat')
+    $requiredCapabilities = @('canvas-apps', 'code-apps', 'power-automate-flowagent', 'dataverse', 'copilot-studio', 'power-cat')
 
     if (@($clients.id | Select-Object -Unique).Count -ne $clients.Count) {
         throw 'Client IDs must be unique.'
@@ -106,6 +106,20 @@ function Get-PPDevCatalogue {
         foreach ($requiredClient in $requiredClients) {
             if ($requiredClient -notin @($capability.clientSupport.clientId)) {
                 throw "Capability '$($capability.id)' must declare '$requiredClient' support status."
+            }
+        }
+
+        # 既知の落とし穴は台帳の一級市民として扱う。未記録なら [] を明示させ、
+        # 「書き忘れ」と「まだ無い」を区別できるようにする。
+        if ($capability.PSObject.Properties.Name -notcontains 'knownPitfalls') {
+            throw "Capability '$($capability.id)' must declare a knownPitfalls array (use [] when none are recorded yet)."
+        }
+
+        foreach ($pitfall in @($capability.knownPitfalls)) {
+            foreach ($pitfallField in @('trigger', 'symptom', 'resolution')) {
+                if ([string]::IsNullOrWhiteSpace($pitfall.$pitfallField)) {
+                    throw "Capability '$($capability.id)' knownPitfalls entries must declare a non-empty '$pitfallField'."
+                }
             }
         }
     }
