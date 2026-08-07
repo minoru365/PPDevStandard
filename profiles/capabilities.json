@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-08-07",
+  "updated": "2026-08-08",
   "clients": [
     {
       "id": "codex",
@@ -33,6 +33,16 @@
       "id": "agent365",
       "maturity": "experimental",
       "default": false
+    }
+  ],
+  "knowledgeSources": [
+    {
+      "id": "microsoft-learn-mcp",
+      "name": "Microsoft Learn MCP",
+      "endpoint": "https://learn.microsoft.com/api/mcp",
+      "role": "standard-read-only",
+      "routingRule": "Use for current public Microsoft documentation, product limits, and code samples before relying on model memory; use product MCPs only when the task needs project or environment context.",
+      "adoptionRule": "Included in generated client MCP configuration without credentials. Verify it in a new session; if unavailable, use the official Learn website and report the limitation."
     }
   ],
   "capabilities": [

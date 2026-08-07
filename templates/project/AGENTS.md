@@ -24,6 +24,9 @@ FlowStudio は外部有償 MCP のため、この共通構成の設定・依存�
 | Code Apps の実装・ローカル実行・データソース追加 | 公式 Code Apps skills と PAC CLI | アプリのソースとデプロイ手順 |
 | Copilot Studio の作成・検証・評価 | 公式 YAML skills | Git 管理された YAML |
 | フロー・Code Apps の品質確認 | Power CAT | レビュー結果とプロジェクトの正本 |
+| 現在の公開仕様・制限・公式コード例の確認 | Microsoft Learn MCP | 公式 Learn の根拠とリンク |
+
+製品仕様、非推奨化、機能制限、公式コード例に依存する判断では、まず Microsoft Learn MCP で公式知識を確認する。Microsoft Learn MCP は公開ドキュメントだけを読む標準知識源であり、テナント、Solution、アプリの実態は示さない。その文脈が必要な場合だけ、許可された開発環境の Dataverse MCP、Canvas Authoring MCP、FlowAgent、PAC MCP を使う。
 
 ## 探索・試作
 
