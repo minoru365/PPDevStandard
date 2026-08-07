@@ -4,7 +4,7 @@ param(
     [ValidateSet('codex', 'claude-code', 'github-copilot-cli')]
     [string]$Client,
 
-    [ValidateSet('all', 'canvas-apps', 'power-automate-flowagent', 'dataverse', 'copilot-studio', 'power-cat')]
+    [ValidateSet('all', 'canvas-apps', 'code-apps', 'power-automate-flowagent', 'dataverse', 'copilot-studio', 'power-cat')]
     [string]$Capability = 'all',
 
     [string]$CataloguePath = (Join-Path $PSScriptRoot '..\profiles\capabilities.json')

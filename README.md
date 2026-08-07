@@ -45,6 +45,7 @@ AI は、どのファイルが正本か、どの環境なら操作してよい�
 | 機能 | AI で始める作業 | プロジェクトで管理する正本 |
 | --- | --- | --- |
 | Canvas Apps | Canvas Authoring MCP を使った開発環境での試作 | 版管理された Canvas 成果物 |
+| Code Apps | ローカルビルドと開発環境での実行、データソース・コネクタの追加 | アプリのソース、`power.config.json`、デプロイ手順 |
 | Power Automate / FlowAgent | フローの探索、新規試作、接続調査、失敗診断 | フロー定義、Solution、接続参照 |
 | Dataverse | メタデータとレコードの読取り調査 | スキーマ、Solution、スクリプト |
 | Copilot Studio | YAML の作成、検証、評価 | Git 管理された YAML |
@@ -77,7 +78,7 @@ AI は、どのファイルが正本か、どの環境なら操作してよい�
 ```powershell
 $targetPath = 'C:\work\my-power-platform-project' # 自分の対象リポジトリに変更する
 $clients = 'all' # codex / claude-code / github-copilot-cli / all
-$capabilities = 'canvas-apps' # all / canvas-apps / power-automate-flowagent / dataverse / copilot-studio / power-cat
+$capabilities = 'canvas-apps' # all / canvas-apps / code-apps / power-automate-flowagent / dataverse / copilot-studio / power-cat
 
 pwsh -NoProfile -File scripts/initialize-project.ps1 `
     -TargetPath $targetPath `
@@ -111,7 +112,7 @@ pwsh -NoProfile -File scripts/initialize-project.ps1 `
 
 ```powershell
 $client = 'codex' # codex / claude-code / github-copilot-cli
-$capability = 'all' # all / canvas-apps / power-automate-flowagent / dataverse / copilot-studio / power-cat
+$capability = 'all' # all / canvas-apps / code-apps / power-automate-flowagent / dataverse / copilot-studio / power-cat
 
 pwsh -NoProfile -File scripts/check-prerequisites.ps1 -Client $client -Capability $capability
 ```
@@ -155,6 +156,8 @@ pwsh -NoProfile -File tests/verify-overlay.ps1
 1. `profiles/capabilities.json` を変更し、`updated` を変更日に合わせる。
 2. 対応クライアントや前提バージョンを変えた場合は、README、`docs/AI_DEVELOPMENT_TOOLING.md`、`tests/verify-overlay.ps1` の期待値も同じ変更でそろえる。
 3. 上の検証コマンドを実行する。
+
+各機能には `knownPitfalls` を必ず置きます。実際に踏んだ落とし穴を `trigger`（どういうときに読むか）、`symptom`（何が起きるか）、`resolution`（どうするか）で記録します。まだ記録が無い場合も `[]` を明示し、「書き忘れ」と「まだ無い」を区別できるようにします。散文で README に書き足すと機械的に検証できなくなるため、落とし穴は台帳側に置いてください。
 
 ### 書かないもの
 

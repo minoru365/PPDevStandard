@@ -53,7 +53,50 @@
         { "clientId": "github-copilot-cli", "status": "supported", "verification": "confirm the canvas-apps plugin and canvas-authoring MCP" }
       ],
       "explorationRule": "Create or edit only new, temporary Canvas Apps in a development environment.",
-      "promotionRule": "Promote approved .pa.yaml or version-controlled Canvas artifacts through Git review before deployment."
+      "promotionRule": "Promote approved .pa.yaml or version-controlled Canvas artifacts through Git review before deployment.",
+      "knownPitfalls": []
+    },
+    {
+      "id": "code-apps",
+      "name": "Code Apps",
+      "source": {
+        "repository": "microsoft/power-platform-skills",
+        "url": "https://github.com/microsoft/power-platform-skills",
+        "package": "code-apps-preview@power-platform-skills"
+      },
+      "prerequisiteCommands": [
+        { "name": "node", "minimumMajor": 20 },
+        { "name": "pac" }
+      ],
+      "clientSupport": [
+        { "clientId": "codex", "status": "supported-with-manual-setup", "verification": "confirm the adopted Code Apps skills in the active developer profile" },
+        { "clientId": "claude-code", "status": "supported", "verification": "confirm the code-apps-preview plugin" },
+        { "clientId": "github-copilot-cli", "status": "supported", "verification": "confirm the code-apps-preview plugin" }
+      ],
+      "explorationRule": "Build and run the app locally against a development environment; add data sources and connectors only for the development environment.",
+      "promotionRule": "Deploy through the project's reviewed source and documented push procedure; publishing to a shared or production environment requires explicit approval.",
+      "knownPitfalls": [
+        {
+          "trigger": "npx power-apps push が could not determine executable to run で失敗する",
+          "symptom": "@microsoft/power-apps-cli が未インストール。SDK の @microsoft/power-apps は bin を持たないライブラリであり CLI ではない。手動導入したマシンでは動くため、新しいクローンや git worktree で初めて露見する。",
+          "resolution": "@microsoft/power-apps-cli を devDependency として package.json に宣言する。create-connection は 0.15.2 で追加されたコマンドで、0.10.0 では The verb is not supported になる。"
+        },
+        {
+          "trigger": "pac code push が HTTP 400 Could not find member 'workflowDetails' で失敗する",
+          "symptom": "power.config.json の接続参照が持つ workflowDetails を API が受け付けない。回避オプションは無い。CLI は exit code 0 を返しながら本文にエラーを出力するため、終了コードだけ見ると成功に見える。",
+          "resolution": "npx power-apps push を使う。workflowDetails は npx power-apps add-flow が書いたクラウドフロー呼び出しのバインディングであり、削除すればアプリからフローを呼べなくなる。"
+        },
+        {
+          "trigger": "自前の認証ラッパー経由で push して 403 InsufficientDelegatedPermissions が出る",
+          "symptom": "プロジェクト側の認証ヘルパーのアプリ登録には PowerApps.Environments.GenerateResourceStorage と All.All.ReadWrite の委任アクセス許可が無い。",
+          "resolution": "CLI 自身のキャッシュ資格情報を使う（npx power-apps login で作成し、npx power-apps auth-status で確認する）。認証ラッパーは Dataverse Web API 用であり Code Apps の push 用ではない。"
+        },
+        {
+          "trigger": "git worktree や新しいクローンでビルドとテストが赤くなる",
+          "symptom": "src/generated、.power、power.config.json は gitignore 対象で追跡されないため、worktree には来ない。生成物が無いだけなのにコードの不具合に見える。",
+          "resolution": "元のチェックアウトからコピーする。npx power-apps init での再生成は vite.config.ts や tsconfig なども再生成対象に含むため、カスタマイズ済みの設定を壊す。"
+        }
+      ]
     },
     {
       "id": "power-automate-flowagent",
@@ -72,7 +115,14 @@
         { "clientId": "github-copilot-cli", "status": "supported", "verification": "confirm the power-automate plugin and FlowAgent MCP" }
       ],
       "explorationRule": "Create new development flows in a stopped state; use connector discovery, validation, preflight, and failure diagnosis.",
-      "promotionRule": "Promote reviewed flow definitions, connection references, and tests into the managed Solution or project source before activation."
+      "promotionRule": "Promote reviewed flow definitions, connection references, and tests into the managed Solution or project source before activation.",
+      "knownPitfalls": [
+        {
+          "trigger": "Codex から FlowAgent MCP を起動して Dynamic require of buffer is not supported が出る",
+          "symptom": "FlowAgent の ESM バンドルが実行時に require を解決しようとするが、素の Node ESM 実行では require がグローバルに存在しない。公式 plugin 経由の Claude Code と GitHub Copilot CLI では起動経路が異なるため発生しない Codex 固有の症状。",
+          "resolution": "CommonJS の require を globalThis に渡してから mcp.mjs を import する Node ブリッジを作り、Codex のグローバル設定へ登録する。回避策でありバンドル本体は直っていないため、バージョンアップ時に再確認する。"
+        }
+      ]
     },
     {
       "id": "dataverse",
@@ -91,7 +141,14 @@
         { "clientId": "github-copilot-cli", "status": "supported", "verification": "confirm the Dataverse plugin and approved MCP connection" }
       ],
       "explorationRule": "Use metadata inspection and read queries by default; state the target and rollback path for temporary development assets.",
-      "promotionRule": "Require explicit approval for managed schema/data changes, deletion, security changes, environment changes, Solution import, and publish."
+      "promotionRule": "Require explicit approval for managed schema/data changes, deletion, security changes, environment changes, Solution import, and publish.",
+      "knownPitfalls": [
+        {
+          "trigger": "新しいテナントで Dataverse CLI / MCP の device code 認証をして AADSTS650052 が出る",
+          "symptom": "テナントに Microsoft Dynamics ERP のリソースサービスプリンシパルが存在しない。",
+          "resolution": "テナント管理者が Dataverse CLI の Entra 管理者同意を付与し、Power Platform 管理センターで Dataverse CLI クライアントを許可する。テナント側の変更になるため、機械的に手順を踏む前に原因を確認し、組織の Entra / Power Platform 管理方針に沿って実施する。"
+        }
+      ]
     },
     {
       "id": "copilot-studio",
@@ -110,7 +167,14 @@
         { "clientId": "github-copilot-cli", "status": "supported", "verification": "confirm the Copilot Studio plugin" }
       ],
       "explorationRule": "Create, validate, and evaluate YAML in a development environment; inspect cloud state before any change.",
-      "promotionRule": "Require explicit approval for pull, push, publish, channel configuration, or changes to an existing cloud agent."
+      "promotionRule": "Require explicit approval for pull, push, publish, channel configuration, or changes to an existing cloud agent.",
+      "knownPitfalls": [
+        {
+          "trigger": "Code Apps から Copilot Studio コネクタでエージェントを呼ぶ",
+          "symptom": "公式ドキュメントの例は body に agentName を入れているが、生成されるサービスのシグネチャは ExecuteCopilotAsyncV2(Copilot, body, ...) で、エージェント名はパスパラメータである。body に入れると success:false のまま原因が分からない。",
+          "resolution": "生成された OpenAPI のパス（/bots/{Copilot}/proactivecopilot/executeAsyncV2）を確認し、エージェント名は第1引数で渡す。レスポンスは型上 void だが実データが入り、data でラップされる場合とされない場合、conversationId のキャメル / パスカルの揺れがあるため、解析は純関数へ切り出してテストする。"
+        }
+      ]
     },
     {
       "id": "power-cat",
@@ -129,7 +193,8 @@
         { "clientId": "github-copilot-cli", "status": "supported", "verification": "confirm Code Apps, Pro-Code evaluation, and Overflow skills" }
       ],
       "explorationRule": "Use Overflow and evaluation tooling to review disposable development artifacts and Solution exports.",
-      "promotionRule": "Treat findings as review evidence; apply fixes through the managed source and project approval process."
+      "promotionRule": "Treat findings as review evidence; apply fixes through the managed source and project approval process.",
+      "knownPitfalls": []
     }
   ]
 }

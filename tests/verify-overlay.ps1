@@ -30,6 +30,7 @@ foreach ($clientId in $requiredClients) {
 
 $requiredCapabilities = @(
     'canvas-apps',
+    'code-apps',
     'power-automate-flowagent',
     'dataverse',
     'copilot-studio',
@@ -47,19 +48,30 @@ if ($agent365.Count -ne 1 -or $agent365[0].maturity -ne 'experimental' -or $agen
     throw 'Agent 365 must remain experimental and disabled by default.'
 }
 
+# 機能によって前提コマンドは複数になる（Code Apps は node と pac）。
+# pac は --version を持たないため minimumMajor を宣言せず、存在確認だけを行う。
 $expectedCapabilityPrerequisites = @{
-    'canvas-apps' = @{ name = 'dotnet'; minimumMajor = 10 }
-    'power-automate-flowagent' = @{ name = 'node'; minimumMajor = 18 }
-    'dataverse' = @{ name = 'dotnet'; minimumMajor = 10 }
-    'copilot-studio' = @{ name = 'node'; minimumMajor = 18 }
-    'power-cat' = @{ name = 'node'; minimumMajor = 18 }
+    'canvas-apps' = @(@{ name = 'dotnet'; minimumMajor = 10 })
+    'code-apps' = @(@{ name = 'node'; minimumMajor = 20 }, @{ name = 'pac'; minimumMajor = $null })
+    'power-automate-flowagent' = @(@{ name = 'node'; minimumMajor = 18 })
+    'dataverse' = @(@{ name = 'dotnet'; minimumMajor = 10 })
+    'copilot-studio' = @(@{ name = 'node'; minimumMajor = 18 })
+    'power-cat' = @(@{ name = 'node'; minimumMajor = 18 })
 }
 foreach ($capabilityId in $expectedCapabilityPrerequisites.Keys) {
     $capability = @($catalogue.capabilities | Where-Object { $_.id -eq $capabilityId })[0]
-    $expectedPrerequisite = $expectedCapabilityPrerequisites[$capabilityId]
+    $expectedPrerequisites = @($expectedCapabilityPrerequisites[$capabilityId])
     $prerequisites = @($capability.prerequisiteCommands)
-    if ($prerequisites.Count -ne 1 -or $null -eq $prerequisites[0].name -or $prerequisites[0].name -ne $expectedPrerequisite.name -or $prerequisites[0].minimumMajor -ne $expectedPrerequisite.minimumMajor) {
-        throw "Capability '$capabilityId' must declare $($expectedPrerequisite.name) major version $($expectedPrerequisite.minimumMajor)."
+    if ($prerequisites.Count -ne $expectedPrerequisites.Count) {
+        throw "Capability '$capabilityId' must declare $($expectedPrerequisites.Count) prerequisite command(s)."
+    }
+
+    for ($prerequisiteIndex = 0; $prerequisiteIndex -lt $expectedPrerequisites.Count; $prerequisiteIndex++) {
+        $expectedPrerequisite = $expectedPrerequisites[$prerequisiteIndex]
+        $actualPrerequisite = $prerequisites[$prerequisiteIndex]
+        if ($actualPrerequisite.name -ne $expectedPrerequisite.name -or $actualPrerequisite.minimumMajor -ne $expectedPrerequisite.minimumMajor) {
+            throw "Capability '$capabilityId' prerequisite $($prerequisiteIndex + 1) must be '$($expectedPrerequisite.name)'."
+        }
     }
 }
 
@@ -80,10 +92,23 @@ foreach ($capability in $catalogue.capabilities) {
             throw "Capability '$($capability.id)' must declare support status for '$clientId'."
         }
     }
+
+    # 既知の落とし穴は台帳の一級市民。未記録なら [] を明示させ、書き忘れと区別する。
+    if ($capability.PSObject.Properties.Name -notcontains 'knownPitfalls') {
+        throw "Capability '$($capability.id)' must declare a knownPitfalls array (use [] when none are recorded yet)."
+    }
+
+    foreach ($pitfall in @($capability.knownPitfalls)) {
+        foreach ($pitfallField in @('trigger', 'symptom', 'resolution')) {
+            if ([string]::IsNullOrWhiteSpace($pitfall.$pitfallField)) {
+                throw "Capability '$($capability.id)' knownPitfalls entries must declare a non-empty '$pitfallField'."
+            }
+        }
+    }
 }
 
 $readme = Get-Content -LiteralPath $readmePath -Raw
-foreach ($requiredText in @('Canvas Apps', 'FlowAgent', 'Dataverse', 'Copilot Studio', 'Power CAT')) {
+foreach ($requiredText in @('Canvas Apps', 'Code Apps', 'FlowAgent', 'Dataverse', 'Copilot Studio', 'Power CAT')) {
     if ($readme -notmatch [regex]::Escape($requiredText)) {
         throw "README.md must include '$requiredText'."
     }
