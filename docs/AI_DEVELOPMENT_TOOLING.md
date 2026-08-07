@@ -45,6 +45,12 @@ Codex では開発者プロファイルの Plugins から、採用する公式�
 
 `mcs-assistant@copilot-studio-plugin` は実験的なため、標準構成には含めません。評価する場合も開発環境に限定し、別途明示承認を得てください。
 
+### 1.1 Microsoft Learn MCP を公式知識源として確認する
+
+PPDevStandard が生成する設定には、`https://learn.microsoft.com/api/mcp` を使う Microsoft Learn MCP が含まれます。これは認証、テナント URL、業務データを必要としない公開・読み取り専用の知識源です。Power Platform の現在の仕様、制限、非推奨化、公式コード例を確認する質問では、まず Microsoft Learn MCP を使います。
+
+Microsoft Learn MCP はプロジェクトや環境の実態を知るものではありません。テーブル、レコード、フロー、Canvas アプリなどの実際の状態は、許可された開発環境の Dataverse MCP、FlowAgent、Canvas Authoring MCP、PAC MCP で確認します。Microsoft Learn MCP が接続できない場合は公式 Learn サイトを参照し、根拠が取得できなかったことを明示してください。
+
 ### 2. ローカルの前提を確認する
 
 PPDevStandard のリポジトリ ルートで、使うクライアントと機能を指定して実行します。`$client` と `$capability` は自分の環境に合わせて変更します。
@@ -83,7 +89,7 @@ Dataverse MCP の接続先は開発者と環境ごとに異なります。公式
 | `.mcp.json` | Claude Code / Copilot CLI が使うプロジェクト MCP 設定 | 接続先や資格情報が含まれていないことを確認する |
 | `.codex/config.toml` | Codex のプロジェクト設定 | Codex を使う場合だけ、MCP が想定どおりであることを確認する |
 
-`.mcp.json` には `pac-cli` だけが入ります。Claude Code と GitHub Copilot CLI では Canvas Authoring MCP が公式プラグイン側から提供されるためです。Codex はプラグインが同じ役割を果たさないので、Canvas Apps を使う場合は `.codex/config.toml` に `canvas-authoring` が含まれます。いずれの場合も、新しい会話で MCP が実際に使えることを確認してください。
+`.mcp.json` には `pac-cli` と標準の公式知識源 `microsoft-learn` が入ります。Claude Code と GitHub Copilot CLI では Canvas Authoring MCP が公式プラグイン側から提供されるためです。Codex はプラグインが同じ役割を果たさないので、Canvas Apps を使う場合は `.codex/config.toml` に `canvas-authoring` が含まれます。いずれの場合も、新しい会話で Microsoft Learn MCP と必要な操作系 MCP が実際に使えることを確認してください。
 
 ## 指示ファイルをどう分けるか
 
@@ -159,6 +165,7 @@ Copilot CLI では `/instructions` で読み込まれた指示を確認できま
 | 既存フローの変更 | プロジェクト固有のフロー定義・Solution・スクリプト | FlowAgent の結果を確認材料にし、正本を迂回して変更しない。 |
 | Dataverse のメタデータ・レコード調査 | Dataverse Skills / MCP | 読取りを既定にする。既存資産、削除、ロール、環境変更は明示承認後。 |
 | Canvas Apps の試作 | Canvas Authoring MCP | 新規の開発環境 coauthoring セッションだけで行う。採用時は版管理成果物をレビューする。 |
+| 現在の公開仕様・制限・公式コード例の確認 | Microsoft Learn MCP | 標準の公式知識源。公開情報のみを扱い、テナントやプロジェクトの実態は示さない。 |
 | Code Apps の実装・ローカル実行・データソース追加 | 公式 Code Apps skills と PAC CLI | デプロイ先は開発環境に限る。共有・本番環境への公開は明示承認後。 |
 | Copilot Studio の作成・検証・評価 | 公式 YAML skills | 既存エージェントの push / publish / チャネル変更は明示承認後。 |
 | Solution 内フロー・Code Apps の品質確認 | Power CAT | 指摘はレビュー材料とし、修正はプロジェクトの正本へ行う。 |

@@ -24,6 +24,7 @@ function Get-PPDevCatalogue {
 
     $clients = @($catalogue.clients)
     $profiles = @($catalogue.profiles)
+    $knowledgeSources = @($catalogue.knowledgeSources)
     $capabilities = @($catalogue.capabilities)
     $requiredClients = @('codex', 'claude-code', 'github-copilot-cli')
     $requiredCapabilities = @('canvas-apps', 'code-apps', 'power-automate-flowagent', 'dataverse', 'copilot-studio', 'power-cat')
@@ -34,6 +35,10 @@ function Get-PPDevCatalogue {
 
     if (@($profiles.id | Select-Object -Unique).Count -ne $profiles.Count) {
         throw 'Profile IDs must be unique.'
+    }
+
+    if (@($knowledgeSources.id | Select-Object -Unique).Count -ne $knowledgeSources.Count) {
+        throw 'Knowledge source IDs must be unique.'
     }
 
     if (@($capabilities.id | Select-Object -Unique).Count -ne $capabilities.Count) {
@@ -60,6 +65,27 @@ function Get-PPDevCatalogue {
     $agent365 = @($profiles | Where-Object { $_.id -eq 'agent365' })
     if ($agent365.Count -ne 1 -or $agent365[0].maturity -ne 'experimental' -or $agent365[0].default) {
         throw 'Agent 365 must remain experimental and disabled by default.'
+    }
+
+    $microsoftLearnMcp = @($knowledgeSources | Where-Object { $_.id -eq 'microsoft-learn-mcp' })
+    if ($microsoftLearnMcp.Count -ne 1) {
+        throw 'Exactly one Microsoft Learn MCP knowledge source must be declared.'
+    }
+
+    foreach ($knowledgeSource in $knowledgeSources) {
+        foreach ($field in @('id', 'name', 'endpoint', 'role', 'routingRule', 'adoptionRule')) {
+            if ([string]::IsNullOrWhiteSpace($knowledgeSource.$field)) {
+                throw "Knowledge source '$($knowledgeSource.id)' must declare a non-empty '$field'."
+            }
+        }
+
+        if ($knowledgeSource.endpoint -notmatch '^https://') {
+            throw "Knowledge source '$($knowledgeSource.id)' must declare an HTTPS endpoint."
+        }
+    }
+
+    if ($microsoftLearnMcp[0].endpoint -ne 'https://learn.microsoft.com/api/mcp' -or $microsoftLearnMcp[0].role -ne 'standard-read-only') {
+        throw 'Microsoft Learn MCP must use its official read-only endpoint.'
     }
 
     foreach ($client in $clients) {

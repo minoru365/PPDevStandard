@@ -43,6 +43,14 @@ foreach ($capabilityId in $requiredCapabilities) {
     }
 }
 
+$learnKnowledgeSource = @($catalogue.knowledgeSources | Where-Object { $_.id -eq 'microsoft-learn-mcp' })
+if ($learnKnowledgeSource.Count -ne 1) {
+    throw 'Catalogue must declare exactly one Microsoft Learn MCP knowledge source.'
+}
+if ($learnKnowledgeSource[0].endpoint -ne 'https://learn.microsoft.com/api/mcp' -or $learnKnowledgeSource[0].role -ne 'standard-read-only') {
+    throw 'Microsoft Learn MCP must remain the standard read-only knowledge source at its official endpoint.'
+}
+
 $agent365 = @($catalogue.profiles | Where-Object { $_.id -eq 'agent365' })
 if ($agent365.Count -ne 1 -or $agent365[0].maturity -ne 'experimental' -or $agent365[0].default) {
     throw 'Agent 365 must remain experimental and disabled by default.'
@@ -216,16 +224,26 @@ foreach ($templatePath in @($mcpTemplatePath, $codexPacTemplatePath, $codexPacCa
 }
 
 $mcpTemplate = Get-Content -LiteralPath $mcpTemplatePath -Raw | ConvertFrom-Json -Depth 10
-if (@($mcpTemplate.mcpServers.PSObject.Properties.Name) -ne @('pac-cli')) {
-    throw 'The shared .mcp.json template must declare only pac-cli.'
+$mcpTemplateServerNames = @($mcpTemplate.mcpServers.PSObject.Properties.Name)
+if (($mcpTemplateServerNames -join ',') -ne 'pac-cli,microsoft-learn') {
+    throw 'The shared .mcp.json template must declare pac-cli and microsoft-learn.'
+}
+if ($mcpTemplate.mcpServers.'microsoft-learn'.type -ne 'http' -or $mcpTemplate.mcpServers.'microsoft-learn'.url -ne 'https://learn.microsoft.com/api/mcp') {
+    throw 'The shared .mcp.json template must configure Microsoft Learn MCP as an HTTP endpoint.'
 }
 
 if ((Get-Content -LiteralPath $codexPacTemplatePath -Raw) -notmatch [regex]::Escape('Microsoft.PowerApps.CLI.Tool')) {
     throw 'The Codex PAC template must declare Microsoft.PowerApps.CLI.Tool.'
 }
+if ((Get-Content -LiteralPath $codexPacTemplatePath -Raw) -notmatch [regex]::Escape('https://learn.microsoft.com/api/mcp')) {
+    throw 'The Codex PAC template must configure Microsoft Learn MCP.'
+}
 
 if ((Get-Content -LiteralPath $codexPacCanvasTemplatePath -Raw) -notmatch [regex]::Escape('Microsoft.PowerApps.CanvasAuthoring.McpServer')) {
     throw 'The Codex Canvas template must declare Microsoft.PowerApps.CanvasAuthoring.McpServer.'
+}
+if ((Get-Content -LiteralPath $codexPacCanvasTemplatePath -Raw) -notmatch [regex]::Escape('https://learn.microsoft.com/api/mcp')) {
+    throw 'The Codex Canvas template must configure Microsoft Learn MCP.'
 }
 
 if ((Get-Content -LiteralPath $toolingGuidePath -Raw) -match [regex]::Escape('initialize-project.ps1')) {
@@ -274,6 +292,9 @@ try {
     if ((Get-Content -LiteralPath (Join-Path $initializationRoot '.codex\config.toml') -Raw) -notmatch [regex]::Escape('Microsoft.PowerApps.CanvasAuthoring.McpServer')) {
         throw 'Canvas initialization must create the Canvas Authoring MCP configuration.'
     }
+    if ((Get-Content -LiteralPath (Join-Path $initializationRoot '.codex\config.toml') -Raw) -notmatch [regex]::Escape('https://learn.microsoft.com/api/mcp')) {
+        throw 'Codex initialization must create the Microsoft Learn MCP configuration.'
+    }
 
     $noCanvasTarget = Join-Path $initializationRoot 'no-canvas'
     $null = New-Item -ItemType Directory -Path $noCanvasTarget -Force
@@ -283,6 +304,9 @@ try {
     }
     if ((Get-Content -LiteralPath (Join-Path $noCanvasTarget '.codex\config.toml') -Raw) -match [regex]::Escape('Microsoft.PowerApps.CanvasAuthoring.McpServer')) {
         throw 'Non-Canvas Codex initialization must not create the Canvas Authoring MCP configuration.'
+    }
+    if ((Get-Content -LiteralPath (Join-Path $noCanvasTarget '.codex\config.toml') -Raw) -notmatch [regex]::Escape('https://learn.microsoft.com/api/mcp')) {
+        throw 'Non-Canvas Codex initialization must create the Microsoft Learn MCP configuration.'
     }
 
     $existingTarget = Join-Path $initializationRoot 'existing'
@@ -316,9 +340,12 @@ foreach ($requiredRule in @('探索・試作', '採用・運用', 'FlowAgent', '
         throw "Project AGENTS template must include '$requiredRule'."
     }
 }
+if ($agentOverlay -notmatch [regex]::Escape('Microsoft Learn MCP')) {
+    throw 'Project AGENTS template must route current product knowledge through Microsoft Learn MCP.'
+}
 
 $toolingGuide = Get-Content -LiteralPath $toolingGuidePath -Raw
-foreach ($requiredGuideTerm in @('.NET 10', 'Node.js 18', 'Node.js 22', 'dv-connect', 'mcs-assistant', 'Power CAT', 'Codex', 'Claude Code', 'GitHub Copilot CLI')) {
+foreach ($requiredGuideTerm in @('.NET 10', 'Node.js 18', 'Node.js 22', 'dv-connect', 'mcs-assistant', 'Power CAT', 'Codex', 'Claude Code', 'GitHub Copilot CLI', 'Microsoft Learn MCP', '公式知識')) {
     if ($toolingGuide -notmatch [regex]::Escape($requiredGuideTerm)) {
         throw "The project tooling guide must include '$requiredGuideTerm'."
     }

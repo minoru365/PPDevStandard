@@ -51,6 +51,12 @@ AI は、どのファイルが正本か、どの環境なら操作してよい�
 | Copilot Studio | YAML の作成、検証、評価 | Git 管理された YAML |
 | Power CAT | Solution 内フローや Code Apps の品質確認 | レビュー結果とプロジェクトの正本 |
 
+## 共通知識源
+
+初期化するプロジェクトには、Microsoft Learn MCP を標準の読み取り専用知識源として設定します。Power Platform の現在の公開仕様、製品の制限、公式コード例を確認する質問では、モデルの記憶だけで判断せず、まずこの MCP を使います。接続先は公開ドキュメントのみで、テナント URL、認証情報、業務データは扱いません。
+
+PAC MCP はローカル開発コマンド、Canvas Authoring MCP・FlowAgent・Dataverse MCP はアプリや開発環境の文脈を扱う操作系です。特に Dataverse MCP は利用者・環境ごとの任意接続であり、共有テンプレートには接続先を入れません。Microsoft Learn MCP が利用できない場合は公式 Learn サイトを参照し、その制約を作業結果に記録します。
+
 ## 対応クライアント
 
 | クライアント | 導入経路 | PPDevStandard の役割 |
@@ -102,7 +108,7 @@ pwsh -NoProfile -File scripts/initialize-project.ps1 `
 
 適用後は、対象リポジトリに作成された `AGENTS.md` と `docs/AI_DEVELOPMENT_TOOLING.md` を読み、`<...>` で示された項目をそのプロジェクトの情報に置き換えます。
 
-作成される MCP 設定は、クライアントごとに内容が異なります。Codex には `pac-cli` を、Canvas Apps を選んだ場合は `canvas-authoring` も `.codex/config.toml` へ書き出します。Claude Code と GitHub Copilot CLI 向けの `.mcp.json` は `pac-cli` だけです。これらのクライアントでは Canvas Authoring MCP が公式プラグイン側から提供されるため、プロジェクト設定に重複して書きません。新しい会話で MCP が想定どおり有効になっているかを確認してください。
+作成される MCP 設定は、クライアントごとに内容が異なります。すべてのクライアントに、公式知識源として `microsoft-learn` を設定します。Codex には `pac-cli` を、Canvas Apps を選んだ場合は `canvas-authoring` も `.codex/config.toml` へ書き出します。Claude Code と GitHub Copilot CLI 向けの `.mcp.json` には `pac-cli` と `microsoft-learn` を入れます。これらのクライアントでは Canvas Authoring MCP が公式プラグイン側から提供されるため、プロジェクト設定に重複して書きません。新しい会話で Microsoft Learn MCP と必要な操作系 MCP が想定どおり有効になっているかを確認してください。
 
 ### 3. ローカルの前提を確認する
 
