@@ -169,20 +169,46 @@
         "package": "copilot-studio@skills-for-copilot-studio"
       },
       "prerequisiteCommands": [
-        { "name": "node", "minimumMajor": 18 }
+        { "name": "node", "minimumMajor": 18 },
+        { "name": "pac" }
       ],
       "clientSupport": [
         { "clientId": "codex", "status": "supported-with-manual-setup", "verification": "confirm Copilot Studio YAML skills in the active developer profile" },
         { "clientId": "claude-code", "status": "supported", "verification": "confirm the Copilot Studio plugin" },
         { "clientId": "github-copilot-cli", "status": "supported", "verification": "confirm the Copilot Studio plugin" }
       ],
-      "explorationRule": "Create, validate, and evaluate YAML in a development environment; inspect cloud state before any change.",
-      "promotionRule": "Require explicit approval for pull, push, publish, channel configuration, or changes to an existing cloud agent.",
+      "explorationRule": "Create, validate, and evaluate YAML in a development environment; inspect cloud state before any change. Clone an existing cloud agent into Git before editing it, so the YAML is the source of truth rather than a snapshot.",
+      "promotionRule": "Require explicit approval for pull, push, publish, channel configuration, or changes to an existing cloud agent. Pull before pushing when anyone may have edited the agent in the portal, because push overwrites the cloud draft from local files.",
       "knownPitfalls": [
         {
           "trigger": "Code Apps から Copilot Studio コネクタでエージェントを呼ぶ",
           "symptom": "公式ドキュメントの例は body に agentName を入れているが、生成されるサービスのシグネチャは ExecuteCopilotAsyncV2(Copilot, body, ...) で、エージェント名はパスパラメータである。body に入れると success:false のまま原因が分からない。",
           "resolution": "生成された OpenAPI のパス（/bots/{Copilot}/proactivecopilot/executeAsyncV2）を確認し、エージェント名は第1引数で渡す。レスポンスは型上 void だが実データが入り、data でラップされる場合とされない場合、conversationId のキャメル / パスカルの揺れがあるため、解析は純関数へ切り出してテストする。"
+        },
+        {
+          "trigger": "pac copilot clone / pull / push が「認識されないコマンド」になる",
+          "symptom": "これらのサブコマンドは PAC CLI 2.6.4 には無く 2.10.1 にはある。standalone 版と dotnet tool 版を両方入れていると PATH の並び順で古い方が優先され、更新したはずなのに使えない。pac copilot mcp が公開する MCP ツールにも clone / pull / push は無く、あるのは publish だけなので、MCP に切り替えても回避できない。",
+          "resolution": "dotnet tool update Microsoft.PowerApps.CLI.Tool で更新し、どちらが先に来るかを確認する。PATH を整理できないうちは ~/.dotnet/tools/pac.exe を絶対パスで呼ぶ。バージョン差はサブコマンドの有無として出るため、手順書にコマンドを書くときは最低バージョンも添える。"
+        },
+        {
+          "trigger": "エージェント設定を再適用するデプロイスクリプトを走らせたら、トピックが消える",
+          "symptom": "冪等性のために「システムトピック以外を削除してから作り直す」実装にしていると、ポータルや YAML で別途作ったトピックを巻き込んで消す。スクリプトが所有していない資産を消す実装は、正本が Git の YAML へ移った時点で破壊操作に変わる。",
+          "resolution": "正本を YAML に移したら、同じ対象を書くスクリプト側の経路（Instructions・会話の開始・オーケストレーション設定・トピック削除）を削除する。両方が書ける状態を残さない。YAML が持たない設定（アイコン、Teams マニフェストなど）だけをスクリプトに残す。"
+        },
+        {
+          "trigger": "トピックを追加したのに、条件分岐が必ず「情報を取得できなかった」側へ落ちる",
+          "symptom": "トピック YAML の inputType.properties に変数を宣言していないと、生成オーケストレーションが Topic 変数を埋められず常に空になる。ポータルのコードビューへ貼る前提で書いた断片は、この宣言を落としやすい。",
+          "resolution": "新しいトピックは、動作実績のある既存の topics/*.mcs.yml を写して作る。オーケストレーションに埋めさせる変数はすべて inputType.properties に displayName / description / type つきで宣言する。"
+        },
+        {
+          "trigger": "実行者を System.User.* に束縛する専用トピックを作って、書き込みを安全にしたつもりになる",
+          "symptom": "トピックを足しても、ツール登録済みの agent flow は隠れない。生成オーケストレーションはトピックを経由せず直接呼べてしまい、そのときツール入力の実行者 ID はモデルが埋める。agent flow は接続参照の identity で動くため、その作文がそのまま「誰の操作か」になる。トピック側の inputType を検査するテストは、この経路を守らない。",
+          "resolution": "旧経路が生きている限り新しいガードは迂回される前提で設計する。フロー側で実行者の権限を検証する（トピックの束縛だけを頼りにしない）。ポータルの下書きチャットで実際に依頼し、フローの実行履歴でトリガー入力の実行者を確認する。指示文とテストだけを根拠にしない。"
+        },
+        {
+          "trigger": "clone した YAML を Git 管理し始めたあと、pull のたびに全ファイルが差分になる / 書いたコメントが消える",
+          "symptom": "core.autocrlf が CLI の書いたバイト列を書き換えるため、内容が同じでも差分が出る。YAML のコメントは push / pull の往復で CLI が再生成するので残らない。clone が作る .mcs/ には接続先の環境 ID とエンドポイントが入る。",
+          "resolution": "ワークスペース配下に -text の gitattributes を置いて改行変換を止める。設計意図は YAML ではなく docs 側に書く。.mcs/ は clone が自前の .gitignore（*）で除外するので、それを消さない。"
         }
       ]
     },
