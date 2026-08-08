@@ -56,14 +56,16 @@ if ($agent365.Count -ne 1 -or $agent365[0].maturity -ne 'experimental' -or $agen
     throw 'Agent 365 must remain experimental and disabled by default.'
 }
 
-# 機能によって前提コマンドは複数になる（Code Apps は node と pac）。
-# pac は --version を持たないため minimumMajor を宣言せず、存在確認だけを行う。
+# 機能によって前提コマンドは複数になる（Code Apps と Copilot Studio は node と pac）。
+# pac は minimumMajor を宣言せず存在確認だけを行う。メジャーは長く 2 のままで、
+# 実際に効くのはマイナー差（copilot clone/pull/push は 2.6.4 に無く 2.10.1 にある）
+# だが、この台帳はメジャーしか表現できない。バージョン差は knownPitfalls が持つ。
 $expectedCapabilityPrerequisites = @{
     'canvas-apps' = @(@{ name = 'dotnet'; minimumMajor = 10 })
     'code-apps' = @(@{ name = 'node'; minimumMajor = 20 }, @{ name = 'pac'; minimumMajor = $null })
     'power-automate-flowagent' = @(@{ name = 'node'; minimumMajor = 18 })
     'dataverse' = @(@{ name = 'dotnet'; minimumMajor = 10 })
-    'copilot-studio' = @(@{ name = 'node'; minimumMajor = 18 })
+    'copilot-studio' = @(@{ name = 'node'; minimumMajor = 18 }, @{ name = 'pac'; minimumMajor = $null })
     'power-cat' = @(@{ name = 'node'; minimumMajor = 18 })
 }
 foreach ($capabilityId in $expectedCapabilityPrerequisites.Keys) {
