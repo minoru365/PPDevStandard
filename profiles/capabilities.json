@@ -128,6 +128,11 @@
       "promotionRule": "Promote reviewed flow definitions, connection references, and tests into the managed Solution or project source before activation.",
       "knownPitfalls": [
         {
+          "trigger": "Codex のプラグイン更新後、power-automate skills は見えるのに list_environments / list_flows などの FlowAgent MCP ツールが新しいタスクへ出ない",
+          "symptom": "~/.codex/config.toml の flowagent 登録が、削除済みの旧プラグインキャッシュ版 server/mcp.mjs を絶対パスで参照している。プラグイン本体と Azure 認証が正常でも MCP だけ起動できない。",
+          "resolution": "公式 power-automate プラグインの現在の server/mcp.mjs を参照するよう開発者ローカルの flowagent 登録を更新する。可能ならキャッシュ内の現行版を起動時に解決して版番号を固定しない。Codex を再起動し、ツール一覧で list_environments / list_flows を確認してから list_environments の読み取りで接続を証明する。ユーザー固有パスや環境一覧はリポジトリへ保存しない。"
+        },
+        {
           "trigger": "Codex から FlowAgent MCP を起動して Dynamic require of buffer is not supported が出る",
           "symptom": "FlowAgent の ESM バンドルが実行時に require を解決しようとするが、素の Node ESM 実行では require がグローバルに存在しない。公式 plugin 経由の Claude Code と GitHub Copilot CLI では起動経路が異なるため発生しない Codex 固有の症状。",
           "resolution": "CommonJS の require を globalThis に渡してから mcp.mjs を import する Node ブリッジを作り、Codex のグローバル設定へ登録する。回避策でありバンドル本体は直っていないため、バージョンアップ時に再確認する。"

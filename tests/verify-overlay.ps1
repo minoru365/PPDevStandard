@@ -117,6 +117,20 @@ foreach ($capability in $catalogue.capabilities) {
     }
 }
 
+$flowAgentCapability = @($catalogue.capabilities | Where-Object { $_.id -eq 'power-automate-flowagent' })
+if ($flowAgentCapability.Count -ne 1) {
+    throw 'Catalogue must declare exactly one power-automate-flowagent capability.'
+}
+
+$flowAgentPitfalls = @($flowAgentCapability[0].knownPitfalls)
+if (-not ($flowAgentPitfalls.trigger -match 'list_environments / list_flows')) {
+    throw 'FlowAgent pitfalls must cover stale Codex plugin-cache registration after an upgrade.'
+}
+
+if (-not ($flowAgentPitfalls.resolution -match '版番号を固定しない')) {
+    throw 'FlowAgent stale-cache guidance must avoid pinning a plugin cache version.'
+}
+
 $readme = Get-Content -LiteralPath $readmePath -Raw
 foreach ($requiredText in @('Canvas Apps', 'Code Apps', 'FlowAgent', 'Dataverse', 'Copilot Studio', 'Power CAT')) {
     if ($readme -notmatch [regex]::Escape($requiredText)) {

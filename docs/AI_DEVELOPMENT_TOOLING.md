@@ -43,6 +43,12 @@ Claude Code と GitHub Copilot CLI の marketplace 導入例です。実際に�
 
 Codex では開発者プロファイルの Plugins から、採用する公式パッケージを導入します。パッケージと対応クライアントは PPDevStandard の `profiles/capabilities.json` にあります。
 
+Power Automate の skills が見えても、`list_environments` / `list_flows` などの FlowAgent MCP ツールが見えなければ導入完了ではありません。Codex の開発者ローカル設定にある `flowagent` が、公式 `power-automate` プラグインの現在の `server/mcp.mjs` を起動しているか確認してください。プラグイン更新後も旧キャッシュ版への絶対パスが残ることがあるため、可能なら起動時に現行キャッシュ版を解決し、版番号を固定しません。修正後は Codex を再起動し、新しいタスクで次を順に確認します。
+
+1. ツール一覧に `list_environments` と `list_flows` がある。
+2. `list_environments` の読み取りが成功する。
+3. ユーザー固有パス、環境一覧、認証情報をリポジトリへ保存していない。
+
 `mcs-assistant@copilot-studio-plugin` は実験的なため、標準構成には含めません。評価する場合も開発環境に限定し、別途明示承認を得てください。
 
 ### 1.1 Microsoft Learn MCP を公式知識源として確認する
