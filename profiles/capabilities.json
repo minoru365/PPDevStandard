@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-08-08",
+  "updated": "2026-08-16",
   "clients": [
     {
       "id": "codex",
@@ -97,14 +97,24 @@
           "resolution": "npx power-apps push を使う。workflowDetails は npx power-apps add-flow が書いたクラウドフロー呼び出しのバインディングであり、削除すればアプリからフローを呼べなくなる。"
         },
         {
-          "trigger": "自前の認証ラッパー経由で push して 403 InsufficientDelegatedPermissions が出る",
-          "symptom": "プロジェクト側の認証ヘルパーのアプリ登録には PowerApps.Environments.GenerateResourceStorage と All.All.ReadWrite の委任アクセス許可が無い。",
-          "resolution": "CLI 自身のキャッシュ資格情報を使う（npx power-apps login で作成し、npx power-apps auth-status で確認する）。認証ラッパーは Dataverse Web API 用であり Code Apps の push 用ではない。"
+          "trigger": "自前の認証ラッパー経由で push して 403 InsufficientDelegatedPermissions が出る、またはラッパー経由の add-flow が無反応のまま返らない",
+          "symptom": "プロジェクト側の認証ヘルパーのアプリ登録には PowerApps.Environments.GenerateResourceStorage と All.All.ReadWrite の委任アクセス許可が無い。push では 403 が出るが、認証ヘルパーが別テナントを向いている状態の add-flow では出力もエラーも一切出ないまま停止するため、原因が認証だと気づきにくい。",
+          "resolution": "CLI 自身のキャッシュ資格情報を使う（npx power-apps login で作成し、npx power-apps auth-status で確認する）。認証ラッパーは Dataverse Web API 用であり Code Apps の CLI 操作用ではない。長時間かかる CLI を PowerShell から回すときは Select-Object へパイプしない。ストリーム全体をバッファするため停止時に途中経過を1行も読めない。Tee-Object でファイルへ流す。"
         },
         {
           "trigger": "git worktree や新しいクローンでビルドとテストが赤くなる",
           "symptom": "src/generated、.power、power.config.json は gitignore 対象で追跡されないため、worktree には来ない。生成物が無いだけなのにコードの不具合に見える。",
           "resolution": "元のチェックアウトからコピーする。npx power-apps init での再生成は vite.config.ts や tsconfig なども再生成対象に含むため、カスタマイズ済みの設定を壊す。"
+        },
+        {
+          "trigger": "Code App からクラウドフローを呼びたいのに、型付きの Run(input) が生成されず汎用のフローサービスになる",
+          "symptom": "add-data-source はデータソース追加に成功したと表示するが、生成されるのはリクエストボディも戻り値の型も持たない汎用クライアントで、フロー個別の入出力を表現しない。接続とデータソース登録が互いを前提にする循環に見えるが、コマンドの選択が誤っているだけ。",
+          "resolution": "add-flow --flow-id <workflowid> を使う。OpenAPI 定義の取得、型付きサービスの生成、接続参照の登録、依存コネクタの接続作成までこれ1つで行う。power.config.json の接続参照キーは CLI が採番する不透明な GUID であり、既存エントリから規則を導出できない。手書きしたキーがあると add-flow はそれを温存して正しい形へ直さないため、作り直すときは remove-flow から add-flow の順で1往復させる。"
+        },
+        {
+          "trigger": "フローのデータソースを外したあと、無関係なフローを呼ぶ箇所でビルドが壊れる",
+          "symptom": "delete-data-source をフローコネクタに対して実行すると、指定したサービスファイルは残ったまま、無関係な別フローの生成サービスが消えることがある。power.config.json には消えた側の接続参照が残るため、設定ファイルを見ても欠落に気づけない。src/generated は gitignore 対象なので git restore でも戻せない。",
+          "resolution": "フローを外すときは remove-flow --flow-id を使う。delete-data-source はフローに使わない。消えてしまった生成サービスは add-flow --flow-id で再生成できる。生成物の一覧を操作の前後で比べて、意図した1件だけが変化したかを確認する。"
         }
       ]
     },
