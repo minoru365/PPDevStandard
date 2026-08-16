@@ -112,6 +112,11 @@
           "resolution": "add-flow --flow-id <workflowid> を使う。OpenAPI 定義の取得、型付きサービスの生成、接続参照の登録、依存コネクタの接続作成までこれ1つで行う。power.config.json の接続参照キーは CLI が採番する不透明な GUID であり、既存エントリから規則を導出できない。手書きしたキーがあると add-flow はそれを温存して正しい形へ直さないため、作り直すときは remove-flow から add-flow の順で1往復させる。"
         },
         {
+          "trigger": "Code App からフローを呼ぶと利用者側だけ失敗する。開発者は動くのに一般利用者は動かない",
+          "symptom": "ブラウザのネットワークに workflows(<id>)/Microsoft.Dynamics.CRM.install の 403 と、connectivity/apis/shared_logicflows/connections/<id> の 404 が出る。Dataverse のセキュリティロールは足りているのに起きる。Code Apps の公式ドキュメントの制約表は利用者要件として Dataverse の権限（App Opener 相当）しか挙げておらず、実行専用ユーザーに言及しないため、記載が無いことを不要の根拠にすると原因にたどり着けない。",
+          "resolution": "そのフローの Power Automate の実行専用ユーザー（Run only users）に、利用者のグループを追加する。フローごとに必要で、新しく足したフローは設定が漏れやすい。公式ドキュメントに記載が無いことは不要であることを意味しない。権限まわりは、設定を外した状態で実際に呼んで確かめる。"
+        },
+        {
           "trigger": "フローのデータソースを外したあと、無関係なフローを呼ぶ箇所でビルドが壊れる",
           "symptom": "delete-data-source をフローコネクタに対して実行すると、指定したサービスファイルは残ったまま、無関係な別フローの生成サービスが消えることがある。power.config.json には消えた側の接続参照が残るため、設定ファイルを見ても欠落に気づけない。src/generated は gitignore 対象なので git restore でも戻せない。",
           "resolution": "フローを外すときは remove-flow --flow-id を使う。delete-data-source はフローに使わない。消えてしまった生成サービスは add-flow --flow-id で再生成できる。生成物の一覧を操作の前後で比べて、意図した1件だけが変化したかを確認する。"
