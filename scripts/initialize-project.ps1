@@ -73,6 +73,11 @@ if (@($selectedClients | Where-Object { $_ -in @('claude-code', 'github-copilot-
     $actions.Add((New-PPDevTemplateAction -SourcePath (Join-Path $templateRoot '.mcp.json') -DestinationPath (Join-Path $targetRoot '.mcp.json') -TargetRoot $targetRoot))
 }
 
+if ($selectedClients -contains 'claude-code') {
+    # Claude Code は CLAUDE.md しか自動読み込みしない。AGENTS.md を橋渡しするブリッジを生成する。
+    $actions.Add((New-PPDevTemplateAction -SourcePath (Join-Path $templateRoot 'CLAUDE.md') -DestinationPath (Join-Path $targetRoot 'CLAUDE.md') -TargetRoot $targetRoot))
+}
+
 if ($selectedClients -contains 'codex') {
     $codexTemplateName = if ($selectedCapabilities -contains 'canvas-apps') { 'config.pac-canvas.toml' } else { 'config.pac.toml' }
     $actions.Add((New-PPDevTemplateAction -SourcePath (Join-Path $templateRoot ".codex\$codexTemplateName") -DestinationPath (Join-Path $targetRoot '.codex\config.toml') -TargetRoot $targetRoot))
