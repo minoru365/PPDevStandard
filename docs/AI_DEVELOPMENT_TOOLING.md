@@ -102,10 +102,13 @@ Dataverse MCP の接続先は開発者と環境ごとに異なります。公式
 
 | ファイル | 役割 | 最初にすること |
 | --- | --- | --- |
-| `AGENTS.md` | AI が読む共通のプロジェクトルール | 正本、開発環境、検証、承認条件を記入する |
+| `AGENTS.md` | 共通のプロジェクトルール（正本）。Codex と GitHub Copilot CLI は直接読む | 正本、開発環境、検証、承認条件を記入する |
+| `CLAUDE.md` | Claude Code 用のブリッジ（`@AGENTS.md` をインポートするだけの最小ファイル）。Claude Code を選んだ場合だけ生成される | Claude Code は `AGENTS.md` を直接読まないため、削除しない。Claude 固有の追加指示があればこの下に書く |
 | `docs/AI_DEVELOPMENT_TOOLING.md` | この導入・運用ガイド | チームへ共有し、使うクライアントの節を確認する |
 | `.mcp.json` | Claude Code / Copilot CLI が使うプロジェクト MCP 設定 | 接続先や資格情報が含まれていないことを確認する |
 | `.codex/config.toml` | Codex のプロジェクト設定 | Codex を使う場合だけ、MCP が想定どおりであることを確認する |
+
+`AGENTS.md` は共通の知識源だが、**Claude Code だけは `AGENTS.md` を直接読まない**。Claude Code は起動時に `CLAUDE.md` だけを自動読み込みする仕様のため、`CLAUDE.md` の先頭に `@AGENTS.md` インポートを置いて橋渡しする。この `CLAUDE.md` は Claude Code を選んだときだけ生成される。Codex（`AGENTS.md` を階層的に読む）と GitHub Copilot CLI（`AGENTS.md` と `CLAUDE.md` の両方を自動検出し、`.github/copilot-instructions.md` とあわせて内容を統合する）は、追加のブリッジなしで `AGENTS.md` を読む。
 
 `.mcp.json` には `pac-cli` と標準の公式知識源 `microsoft-learn` が入ります。Claude Code と GitHub Copilot CLI では Canvas Authoring MCP が公式プラグイン側から提供されるためです。Codex はプラグインが同じ役割を果たさないので、Canvas Apps を使う場合は `.codex/config.toml` に `canvas-authoring` が含まれます。いずれの場合も、新しい会話で Microsoft Learn MCP と必要な操作系 MCP が実際に使えることを確認してください。
 
@@ -116,10 +119,12 @@ Dataverse MCP の接続先は開発者と環境ごとに異なります。公式
 | クライアント | 個人: 全リポジトリに効く指示 | リポジトリ: チームで共有する指示 | 使いどころ |
 | --- | --- | --- | --- |
 | Codex | `~/.codex/AGENTS.md` | `AGENTS.md` | 個人の承認の好みは前者、プロジェクトの正本と検証は後者 |
-| Claude Code | `~/.claude/CLAUDE.md` | `CLAUDE.md` または共通 `AGENTS.md`。領域限定は `.claude/rules/` | Claude 固有の手順だけを追加する |
-| GitHub Copilot CLI | `~/.copilot/copilot-instructions.md` | `.github/copilot-instructions.md` と共通 `AGENTS.md` | Copilot 固有の補足だけを追加する |
+| Claude Code | `~/.claude/CLAUDE.md` | `CLAUDE.md`（`@AGENTS.md` を先頭でインポート）。領域限定は `.claude/rules/` | Claude 固有の手順だけを `CLAUDE.md` に追加する |
+| GitHub Copilot CLI | `~/.copilot/copilot-instructions.md` | `AGENTS.md`（直接読む）または `.github/copilot-instructions.md` | Copilot 固有の補足だけを追加する |
 
-複数の指示が同時に読み込まれることがあります。矛盾する指示を書かないでください。特に「どの環境を操作してよいか」「公開の条件」「正本の場所」は `AGENTS.md` だけを更新するようにすると、三つのクライアントで同じ判断ができます。
+**Claude Code だけは `AGENTS.md` を直接読まない。** 起動時に自動読み込みするのは `CLAUDE.md` のみという仕様のため、`CLAUDE.md` から `@AGENTS.md` をインポートするブリッジが必須になる（初期化コマンドで Claude Code を選ぶと自動生成される）。Codex はリポジトリの `AGENTS.md` を階層的に読み、GitHub Copilot CLI は `AGENTS.md` と `CLAUDE.md` の両方を自動検出して内容を統合するため、これらのクライアントにはブリッジが要らない。
+
+複数の指示が同時に読み込まれることがあります。矛盾する指示を書かないでください。特に「どの環境を操作してよいか」「公開の条件」「正本の場所」は `AGENTS.md` だけを更新するようにすると、三つのクライアントで同じ判断ができます（Claude Code は `CLAUDE.md` の `@AGENTS.md` インポートが存在する前提。ブリッジを消さないこと）。
 
 ### グローバル指示の最小サンプル
 

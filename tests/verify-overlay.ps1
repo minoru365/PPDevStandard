@@ -228,8 +228,9 @@ $mcpTemplatePath = Join-Path $projectTemplateRoot '.mcp.json'
 $codexPacTemplatePath = Join-Path $projectTemplateRoot '.codex\config.pac.toml'
 $codexPacCanvasTemplatePath = Join-Path $projectTemplateRoot '.codex\config.pac-canvas.toml'
 $projectAgentTemplatePath = Join-Path $projectTemplateRoot 'AGENTS.md'
+$projectClaudeTemplatePath = Join-Path $projectTemplateRoot 'CLAUDE.md'
 $toolingGuidePath = Join-Path $repositoryRoot 'docs\AI_DEVELOPMENT_TOOLING.md'
-foreach ($templatePath in @($mcpTemplatePath, $codexPacTemplatePath, $codexPacCanvasTemplatePath, $projectAgentTemplatePath, $toolingGuidePath)) {
+foreach ($templatePath in @($mcpTemplatePath, $codexPacTemplatePath, $codexPacCanvasTemplatePath, $projectAgentTemplatePath, $projectClaudeTemplatePath, $toolingGuidePath)) {
     if (-not (Test-Path -LiteralPath $templatePath)) {
         throw "Expected template or guide '$templatePath' to exist."
     }
@@ -260,6 +261,10 @@ if ((Get-Content -LiteralPath $codexPacCanvasTemplatePath -Raw) -notmatch [regex
 }
 if ((Get-Content -LiteralPath $codexPacCanvasTemplatePath -Raw) -notmatch [regex]::Escape('https://learn.microsoft.com/api/mcp')) {
     throw 'The Codex Canvas template must configure Microsoft Learn MCP.'
+}
+
+if ((Get-Content -LiteralPath $projectClaudeTemplatePath -Raw) -notmatch [regex]::Escape('@AGENTS.md')) {
+    throw 'The Claude Code CLAUDE.md template must import AGENTS.md via @AGENTS.md, since Claude Code does not read AGENTS.md directly.'
 }
 
 if ((Get-Content -LiteralPath $toolingGuidePath -Raw) -match [regex]::Escape('initialize-project.ps1')) {
@@ -305,6 +310,9 @@ try {
     if (Test-Path -LiteralPath (Join-Path $initializationRoot '.mcp.json')) {
         throw 'Codex-only initialization must not create .mcp.json.'
     }
+    if (Test-Path -LiteralPath (Join-Path $initializationRoot 'CLAUDE.md')) {
+        throw 'Codex-only initialization must not create CLAUDE.md.'
+    }
     if ((Get-Content -LiteralPath (Join-Path $initializationRoot '.codex\config.toml') -Raw) -notmatch [regex]::Escape('Microsoft.PowerApps.CanvasAuthoring.McpServer')) {
         throw 'Canvas initialization must create the Canvas Authoring MCP configuration.'
     }
@@ -344,6 +352,13 @@ try {
     }
     if (Test-Path -LiteralPath (Join-Path $existingTarget '.codex\config.toml')) {
         throw 'Claude Code initialization must not create a Codex configuration file.'
+    }
+    $generatedClaudePath = Join-Path $existingTarget 'CLAUDE.md'
+    if (-not (Test-Path -LiteralPath $generatedClaudePath)) {
+        throw 'Claude Code initialization must create CLAUDE.md, since Claude Code does not read AGENTS.md directly.'
+    }
+    if ((Get-Content -LiteralPath $generatedClaudePath -Raw) -notmatch [regex]::Escape('@AGENTS.md')) {
+        throw 'The generated CLAUDE.md must import AGENTS.md via @AGENTS.md.'
     }
 }
 finally {

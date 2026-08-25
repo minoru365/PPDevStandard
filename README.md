@@ -18,7 +18,7 @@ AI は、どのファイルが正本か、どの環境なら操作してよい�
 
 1. [個別リポジトリ向けの実践ガイド](./docs/AI_DEVELOPMENT_TOOLING.md)で、使う AI クライアントの一度だけの準備を行う。
 2. この README の「他のリポジトリへ適用する」で、対象リポジトリをまずプレビューする。
-3. プレビュー結果を確認してから `-Apply` を付け、作成された `AGENTS.md` と `docs/AI_DEVELOPMENT_TOOLING.md` をそのプロジェクト用に完成させる。
+3. プレビュー結果を確認してから `-Apply` を付け、作成された `AGENTS.md`（Claude Code を選んだ場合は `CLAUDE.md` も）と `docs/AI_DEVELOPMENT_TOOLING.md` をそのプロジェクト用に完成させる。
 
 ## PPDevStandard が担うこと
 
@@ -96,7 +96,7 @@ pwsh -NoProfile -File scripts/initialize-project.ps1 `
 
 ### 2. 確認できたら適用する
 
-プレビュー結果に問題がなければ、同じコマンドの最後に `-Apply` を付けます。`-Apply` は唯一の書込み用スイッチです。既存の `.mcp.json`、`.codex/config.toml`、`AGENTS.md`、ツール文書は上書きしません。
+プレビュー結果に問題がなければ、同じコマンドの最後に `-Apply` を付けます。`-Apply` は唯一の書込み用スイッチです。既存の `.mcp.json`、`.codex/config.toml`、`AGENTS.md`、`CLAUDE.md`、ツール文書は上書きしません。
 
 ```powershell
 pwsh -NoProfile -File scripts/initialize-project.ps1 `
@@ -106,7 +106,7 @@ pwsh -NoProfile -File scripts/initialize-project.ps1 `
     -Apply
 ```
 
-適用後は、対象リポジトリに作成された `AGENTS.md` と `docs/AI_DEVELOPMENT_TOOLING.md` を読み、`<...>` で示された項目をそのプロジェクトの情報に置き換えます。
+適用後は、対象リポジトリに作成された `AGENTS.md`（Claude Code を選んだ場合は `@AGENTS.md` をインポートするだけの `CLAUDE.md` も生成される。Claude Code は `AGENTS.md` を直接読まないため、これは削除しないこと）と `docs/AI_DEVELOPMENT_TOOLING.md` を読み、`<...>` で示された項目をそのプロジェクトの情報に置き換えます。
 
 作成される MCP 設定は、クライアントごとに内容が異なります。すべてのクライアントに、公式知識源として `microsoft-learn` を設定します。Codex には `pac-cli` を、Canvas Apps を選んだ場合は `canvas-authoring` も `.codex/config.toml` へ書き出します。Claude Code と GitHub Copilot CLI 向けの `.mcp.json` には `pac-cli` と `microsoft-learn` を入れます。これらのクライアントでは Canvas Authoring MCP が公式プラグイン側から提供されるため、プロジェクト設定に重複して書きません。新しい会話で Microsoft Learn MCP と必要な操作系 MCP が想定どおり有効になっているかを確認してください。
 
